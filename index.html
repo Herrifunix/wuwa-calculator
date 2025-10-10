@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WuWa – Calculateur de vœux et coraux</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #151923;
+    --text: #e9ecf3;
+    --muted: #aab1c3;
+    --green: #37d67a;
+    --border: #232835;
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, sans-serif;
+  }
+  .wrap {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+  }
+  h1 {
+    font-size: 24px;
+  }
+  .inputs {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  input {
+    background: #0d111a;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    border-radius: 6px;
+    width: 120px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  th, td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    color: var(--muted);
+  }
+  td.seq {
+    text-align: left;
+    color: var(--text);
+  }
+  .status-box {
+    display: inline-block;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: #0d111a;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 60px;
+    text-align: center;
+  }
+  .status-box.reachable {
+    background: var(--green);
+    border-color: #1b1f2b;
+    box-shadow: 0 0 10px rgba(55,214,122,0.3);
+    color: #0d111a;
+  }
+  .status-box.unreachable {
+    background: #2a1f1f;
+    border-color: #4a2a2a;
+    color: #ff6b6b;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Wuthering Waves – Calculateur de vœux et coraux</h1>
+  <p>Entrez vos ressources pour voir combien de séquences vous pouvez atteindre. Les cases s'allument automatiquement selon vos vœux et coraux.</p>
+  
+  <div class="inputs">
+    <div>
+      <label for="astrite">Astrite</label>
+      <input id="astrite" type="number" value="0" min="0">
+    </div>
+    <div>
+      <label for="voeux">Vœux actuels</label>
+      <input id="voeux" type="number" value="0" min="0">
+    </div>
+    <div>
+      <label for="coraux">Coraux</label>
+      <input id="coraux" type="number" value="0" min="0">
+    </div>
+    <div>
+      <label>Total vœux</label>
+      <div id="total-voeux" style="padding: 8px 10px; background: #0d111a; border: 1px solid var(--border); border-radius: 6px; color: var(--green); font-weight: bold; width: 120px;">0</div>
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Séquence</th>
+        <th>Worst</th>
+        <th>Lose 50/50</th>
+        <th>Win 50/50</th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+</div>
+<script>
+const data = [
+  { seq: '0 [Just the character]', worst: 160, lose: 160, win: 80 },
+  { seq: '1', worst: 320, lose: 240, win: 160 },
+  { seq: '2', worst: 480, lose: 400, win: 240 },
+  { seq: '3', worst: 640, lose: 480, win: 320 },
+  { seq: '4', worst: 800, lose: 640, win: 400 },
+  { seq: '5', worst: 960, lose: 720, win: 480 },
+  { seq: '6', worst: 1120, lose: 800, win: 560 }
+];
+
+const tbody = document.getElementById('table-body');
+const astriteInput = document.getElementById('astrite');
+const voeuxInput = document.getElementById('voeux');
+const corauxInput = document.getElementById('coraux');
+const totalVoeuxDisplay = document.getElementById('total-voeux');
+
+// Charger les valeurs sauvegardées au démarrage
+function loadSavedValues() {
+  const savedAstrite = localStorage.getItem('wuwa-astrite');
+  const savedVoeux = localStorage.getItem('wuwa-voeux');
+  const savedCoraux = localStorage.getItem('wuwa-coraux');
+  
+  if (savedAstrite !== null) astriteInput.value = savedAstrite;
+  if (savedVoeux !== null) voeuxInput.value = savedVoeux;
+  if (savedCoraux !== null) corauxInput.value = savedCoraux;
+}
+
+// Sauvegarder les valeurs
+function saveValues() {
+  localStorage.setItem('wuwa-astrite', astriteInput.value);
+  localStorage.setItem('wuwa-voeux', voeuxInput.value);
+  localStorage.setItem('wuwa-coraux', corauxInput.value);
+}
+
+function bonusFromCoraux(coraux) {
+  // Les coraux donnent des séquences directes
+  if (coraux >= 720) return 2; // 2 séquences complètes
+  if (coraux >= 360) return 1; // 1 séquence complète
+  return 0;
+}
+
+function render() {
+  const astrite = parseFloat(astriteInput.value) || 0;
+  const voeux = parseFloat(voeuxInput.value) || 0;
+  const coraux = parseFloat(corauxInput.value) || 0;
+  const totalVoeux = voeux + astrite / 160;
+  const bonusSequences = bonusFromCoraux(coraux);
+
+  // Sauvegarder les valeurs à chaque changement
+  saveValues();
+
+  // Mettre à jour l'affichage du total (vœux + indication séquences coraux)
+  let displayText = Math.floor(totalVoeux);
+  if (bonusSequences > 0) {
+    displayText += ` (+${bonusSequences} seq)`;
+  }
+  totalVoeuxDisplay.textContent = displayText;
+
+  tbody.innerHTML = '';
+
+  data.forEach((row, i) => {
+    const tr = document.createElement('tr');
+    const tdSeq = document.createElement('td');
+    tdSeq.className = 'seq';
+    tdSeq.textContent = row.seq;
+
+    const tdWorst = document.createElement('td');
+    const tdLose = document.createElement('td');
+    const tdWin = document.createElement('td');
+
+    tdWorst.appendChild(makeStatusBox(row.worst, totalVoeux, bonusSequences, i, 'worst'));
+    tdLose.appendChild(makeStatusBox(row.lose, totalVoeux, bonusSequences, i, 'lose'));
+    tdWin.appendChild(makeStatusBox(row.win, totalVoeux, bonusSequences, i, 'win'));
+
+    tr.appendChild(tdSeq);
+    tr.appendChild(tdWorst);
+    tr.appendChild(tdLose);
+    tr.appendChild(tdWin);
+
+    tbody.appendChild(tr);
+  });
+}
+
+function makeStatusBox(requiredPulls, totalVoeux, bonusSequences, sequenceIndex, scenario) {
+  const box = document.createElement('div');
+  box.className = 'status-box';
+  
+  // Calculer combien de séquences on peut déjà atteindre avec nos vœux
+  let sequencesFromVoeux = 0;
+  for (let i = 0; i < data.length; i++) {
+    let requiredForThisSeq;
+    switch(scenario) {
+      case 'worst': requiredForThisSeq = data[i].worst; break;
+      case 'lose': requiredForThisSeq = data[i].lose; break;
+      case 'win': requiredForThisSeq = data[i].win; break;
+    }
+    if (totalVoeux >= requiredForThisSeq) {
+      sequencesFromVoeux = i + 1;
+    } else {
+      break;
+    }
+  }
+  
+  // Les coraux donnent des séquences SUPPLÉMENTAIRES après celles des vœux
+  const totalSequencesAvailable = sequencesFromVoeux + bonusSequences;
+  
+  if (sequenceIndex < sequencesFromVoeux) {
+    // Accessible avec vos vœux normaux
+    box.classList.add('reachable');
+    box.textContent = '✓';
+  } else if (sequenceIndex < totalSequencesAvailable) {
+    // Accessible grâce aux coraux (séquence supplémentaire)
+    box.classList.add('reachable');
+    box.textContent = '★';
+    box.title = 'Séquence supplémentaire grâce aux coraux';
+  } else {
+    // Pas encore accessible
+    box.classList.add('unreachable');
+    const voeuxNeeded = Math.max(0, requiredPulls - totalVoeux);
+    box.textContent = Math.ceil(voeuxNeeded);
+  }
+  
+  return box;
+}
+
+[astriteInput, voeuxInput, corauxInput].forEach(el => el.addEventListener('input', render));
+
+// Charger les valeurs sauvegardées au démarrage
+loadSavedValues();
+render();
+</script>
+</body>
+</html>
