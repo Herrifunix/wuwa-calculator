@@ -117,12 +117,40 @@
       <input id="coraux" type="number" value="0" min="0">
     </div>
     <div>
-      <label>
+      <label style="display: flex; align-items: center;">
         <input id="garanti" type="checkbox">
-        <span style="margin-left: 5px;">Garanti (50/50 perdu)</span>
+        <span style="margin-left: 5px;">Garanti</span>
       </label>
     </div>
+  </div>
+
+  <h2 style="font-size: 20px; margin-top: 30px; margin-bottom: 15px;">Arme R5</h2>
+  <div class="inputs">
     <div>
+      <label for="voeux-arme">Vœux arme</label>
+      <input id="voeux-arme" type="number" value="0" min="0">
+    </div>
+    <div>
+      <label for="pity-arme">Pity arme</label>
+      <input id="pity-arme" type="number" value="0" min="0" max="80">
+    </div>
+    <div>
+      <label>Total vœux arme</label>
+      <div id="total-voeux-arme" style="padding: 8px 10px; background: #0d111a; border: 1px solid var(--border); border-radius: 6px; color: var(--green); font-weight: bold; width: 120px;">0</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Rang</th>
+        <th>Vœux requis</th>
+      </tr>
+    </thead>
+    <tbody id="arme-table-body"></tbody>
+  </table>
+
+  <h2 style="font-size: 20px; margin-top: 30px; margin-bottom: 15px;">Personnage</h2>
       <label>Total vœux</label>
       <div id="total-voeux" style="padding: 8px 10px; background: #0d111a; border: 1px solid var(--border); border-radius: 6px; color: var(--green); font-weight: bold; width: 120px;">0</div>
     </div>
@@ -150,13 +178,25 @@ const data = [
   { seq: '6', worst: 1120, lose: 800, win: 560 }
 ];
 
+const armeData = [
+  { rang: 'R1', pulls: 80 },
+  { rang: 'R2', pulls: 160 },
+  { rang: 'R3', pulls: 240 },
+  { rang: 'R4', pulls: 320 },
+  { rang: 'R5', pulls: 400 }
+];
+
 const tbody = document.getElementById('table-body');
+const armeTableBody = document.getElementById('arme-table-body');
 const astriteInput = document.getElementById('astrite');
 const voeuxInput = document.getElementById('voeux');
 const pityInput = document.getElementById('pity');
 const corauxInput = document.getElementById('coraux');
 const garantiInput = document.getElementById('garanti');
+const voeuxArmeInput = document.getElementById('voeux-arme');
+const pityArmeInput = document.getElementById('pity-arme');
 const totalVoeuxDisplay = document.getElementById('total-voeux');
+const totalVoeuxArmeDisplay = document.getElementById('total-voeux-arme');
 
 // Charger les valeurs sauvegardées au démarrage
 function loadSavedValues() {
@@ -165,12 +205,16 @@ function loadSavedValues() {
   const savedPity = localStorage.getItem('wuwa-pity');
   const savedCoraux = localStorage.getItem('wuwa-coraux');
   const savedGaranti = localStorage.getItem('wuwa-garanti');
+  const savedVoeuxArme = localStorage.getItem('wuwa-voeux-arme');
+  const savedPityArme = localStorage.getItem('wuwa-pity-arme');
   
   if (savedAstrite !== null) astriteInput.value = savedAstrite;
   if (savedVoeux !== null) voeuxInput.value = savedVoeux;
   if (savedPity !== null) pityInput.value = savedPity;
   if (savedCoraux !== null) corauxInput.value = savedCoraux;
   if (savedGaranti !== null) garantiInput.checked = (savedGaranti === 'true');
+  if (savedVoeuxArme !== null) voeuxArmeInput.value = savedVoeuxArme;
+  if (savedPityArme !== null) pityArmeInput.value = savedPityArme;
 }
 
 // Sauvegarder les valeurs
@@ -180,6 +224,8 @@ function saveValues() {
   localStorage.setItem('wuwa-pity', pityInput.value);
   localStorage.setItem('wuwa-coraux', corauxInput.value);
   localStorage.setItem('wuwa-garanti', garantiInput.checked);
+  localStorage.setItem('wuwa-voeux-arme', voeuxArmeInput.value);
+  localStorage.setItem('wuwa-pity-arme', pityArmeInput.value);
 }
 
 function bonusFromCoraux(coraux) {
@@ -187,6 +233,48 @@ function bonusFromCoraux(coraux) {
   if (coraux >= 720) return 2; // 2 séquences complètes
   if (coraux >= 360) return 1; // 1 séquence complète
   return 0;
+}
+
+function renderArme() {
+  const voeuxArme = parseFloat(voeuxArmeInput.value) || 0;
+  const pityArme = parseFloat(pityArmeInput.value) || 0;
+  const totalVoeuxArme = voeuxArme + pityArme;
+
+  // Sauvegarder les valeurs
+  saveValues();
+
+  // Mettre à jour l'affichage du total arme
+  totalVoeuxArmeDisplay.textContent = Math.floor(totalVoeuxArme);
+
+  armeTableBody.innerHTML = '';
+
+  armeData.forEach((row, i) => {
+    const tr = document.createElement('tr');
+    const tdRang = document.createElement('td');
+    tdRang.className = 'seq';
+    tdRang.textContent = row.rang;
+
+    const tdStatus = document.createElement('td');
+    const box = document.createElement('div');
+    box.className = 'status-box';
+
+    // Chaque rang coûte 80 pulls garantis (pity 80)
+    const requiredPulls = row.pulls;
+    const voeuxNeeded = Math.max(0, requiredPulls - totalVoeuxArme);
+
+    if (totalVoeuxArme >= requiredPulls) {
+      box.classList.add('reachable');
+      box.textContent = '✓';
+    } else {
+      box.classList.add('unreachable');
+      box.textContent = Math.ceil(voeuxNeeded);
+    }
+
+    tdStatus.appendChild(box);
+    tr.appendChild(tdRang);
+    tr.appendChild(tdStatus);
+    armeTableBody.appendChild(tr);
+  });
 }
 
 function render() {
@@ -237,28 +325,65 @@ function makeStatusBox(requiredPulls, totalVoeux, pity, bonusSequences, sequence
   const box = document.createElement('div');
   box.className = 'status-box';
   
-  // Si garanti, on utilise toujours le scénario "lose" pour la première séquence
-  let effectiveScenario = scenario;
-  if (garanti && sequenceIndex === 0) {
-    // En garanti, on est assuré d'avoir le perso au prochain 5*
-    // Donc on utilise le coût "lose" qui assume qu'on a déjà perdu le 50/50
-    effectiveScenario = 'lose';
-    // On ajuste le coût requis : au lieu de perdre puis gagner, on gagne directement
-    requiredPulls = 80; // Un seul pity suffit
+  // Calculer le coût cumulatif avec le garanti
+  let adjustedRequiredPulls = requiredPulls;
+  if (garanti) {
+    // Si garanti est actif, on recalcule les coûts cumulatifs
+    let cumulativeCost = 0;
+    for (let i = 0; i <= sequenceIndex; i++) {
+      if (i === 0) {
+        // S0 avec garanti = 80 pulls (1 seul pity garanti)
+        cumulativeCost += 80;
+      } else {
+        // Après S0, on repart sur un 50/50 incertain
+        // On utilise les coûts incrémentaux normaux
+        let costForThisSeq;
+        switch(scenario) {
+          case 'worst':
+            // Chaque séquence après S0 coûte 160 (worst case)
+            costForThisSeq = 160;
+            break;
+          case 'lose':
+            // Chaque séquence coûte 80 (on assume qu'on perd le 50/50 mais on a le garanti)
+            costForThisSeq = 80;
+            break;
+          case 'win':
+            // Chaque séquence coûte 80 (on win le 50/50)
+            costForThisSeq = 80;
+            break;
+        }
+        cumulativeCost += costForThisSeq;
+      }
+    }
+    adjustedRequiredPulls = cumulativeCost;
   }
   
   // La pity réduit le coût de TOUTES les séquences (comme les vœux actuels)
-  const adjustedRequiredPulls = Math.max(0, requiredPulls - pity);
+  adjustedRequiredPulls = Math.max(0, adjustedRequiredPulls - pity);
   const totalVoeuxWithPity = totalVoeux + pity;
   
   // Calculer combien de séquences on peut déjà atteindre avec nos vœux + pity
   let sequencesFromVoeux = 0;
   for (let i = 0; i < data.length; i++) {
     let requiredForThisSeq;
-    // Pour la première séquence avec garanti
-    if (garanti && i === 0) {
-      requiredForThisSeq = 80; // Garanti = 1 seul pity
+    
+    if (garanti) {
+      // Recalculer le coût cumulatif pour cette séquence
+      let cumulative = 0;
+      for (let j = 0; j <= i; j++) {
+        if (j === 0) {
+          cumulative += 80; // S0 garanti
+        } else {
+          switch(scenario) {
+            case 'worst': cumulative += 160; break;
+            case 'lose': cumulative += 80; break;
+            case 'win': cumulative += 80; break;
+          }
+        }
+      }
+      requiredForThisSeq = cumulative;
     } else {
+      // Utiliser les valeurs normales du tableau
       switch(scenario) {
         case 'worst': requiredForThisSeq = data[i].worst; break;
         case 'lose': requiredForThisSeq = data[i].lose; break;
@@ -298,9 +423,12 @@ function makeStatusBox(requiredPulls, totalVoeux, pity, bonusSequences, sequence
 [astriteInput, voeuxInput, pityInput, corauxInput].forEach(el => el.addEventListener('input', render));
 garantiInput.addEventListener('change', render);
 
+[voeuxArmeInput, pityArmeInput].forEach(el => el.addEventListener('input', renderArme));
+
 // Charger les valeurs sauvegardées au démarrage
 loadSavedValues();
 render();
+renderArme();
 </script>
 </body>
 </html>
