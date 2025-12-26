@@ -117,6 +117,12 @@
       <input id="coraux" type="number" value="0" min="0">
     </div>
     <div>
+      <label>
+        <input id="garanti" type="checkbox">
+        <span style="margin-left: 5px;">Garanti (50/50 perdu)</span>
+      </label>
+    </div>
+    <div>
       <label>Total vœux</label>
       <div id="total-voeux" style="padding: 8px 10px; background: #0d111a; border: 1px solid var(--border); border-radius: 6px; color: var(--green); font-weight: bold; width: 120px;">0</div>
     </div>
@@ -149,6 +155,7 @@ const astriteInput = document.getElementById('astrite');
 const voeuxInput = document.getElementById('voeux');
 const pityInput = document.getElementById('pity');
 const corauxInput = document.getElementById('coraux');
+const garantiInput = document.getElementById('garanti');
 const totalVoeuxDisplay = document.getElementById('total-voeux');
 
 // Charger les valeurs sauvegardées au démarrage
@@ -157,11 +164,13 @@ function loadSavedValues() {
   const savedVoeux = localStorage.getItem('wuwa-voeux');
   const savedPity = localStorage.getItem('wuwa-pity');
   const savedCoraux = localStorage.getItem('wuwa-coraux');
+  const savedGaranti = localStorage.getItem('wuwa-garanti');
   
   if (savedAstrite !== null) astriteInput.value = savedAstrite;
   if (savedVoeux !== null) voeuxInput.value = savedVoeux;
   if (savedPity !== null) pityInput.value = savedPity;
   if (savedCoraux !== null) corauxInput.value = savedCoraux;
+  if (savedGaranti !== null) garantiInput.checked = (savedGaranti === 'true');
 }
 
 // Sauvegarder les valeurs
@@ -170,6 +179,7 @@ function saveValues() {
   localStorage.setItem('wuwa-voeux', voeuxInput.value);
   localStorage.setItem('wuwa-pity', pityInput.value);
   localStorage.setItem('wuwa-coraux', corauxInput.value);
+  localStorage.setItem('wuwa-garanti', garantiInput.checked);
 }
 
 function bonusFromCoraux(coraux) {
@@ -184,6 +194,7 @@ function render() {
   const voeux = parseFloat(voeuxInput.value) || 0;
   const pity = parseFloat(pityInput.value) || 0;
   const coraux = parseFloat(corauxInput.value) || 0;
+  const garanti = garantiInput.checked;
   const totalVoeux = voeux + astrite / 160;
   const bonusSequences = bonusFromCoraux(coraux);
 
@@ -209,9 +220,9 @@ function render() {
     const tdLose = document.createElement('td');
     const tdWin = document.createElement('td');
 
-    tdWorst.appendChild(makeStatusBox(row.worst, totalVoeux, pity, bonusSequences, i, 'worst'));
-    tdLose.appendChild(makeStatusBox(row.lose, totalVoeux, pity, bonusSequences, i, 'lose'));
-    tdWin.appendChild(makeStatusBox(row.win, totalVoeux, pity, bonusSequences, i, 'win'));
+    tdWorst.appendChild(makeStatusBox(row.worst, totalVoeux, pity, bonusSequences, i, 'worst', garanti));
+    tdLose.appendChild(makeStatusBox(row.lose, totalVoeux, pity, bonusSequences, i, 'lose', garanti));
+    tdWin.appendChild(makeStatusBox(row.win, totalVoeux, pity, bonusSequences, i, 'win', garanti));
 
     tr.appendChild(tdSeq);
     tr.appendChild(tdWorst);
@@ -222,9 +233,19 @@ function render() {
   });
 }
 
-function makeStatusBox(requiredPulls, totalVoeux, pity, bonusSequences, sequenceIndex, scenario) {
+function makeStatusBox(requiredPulls, totalVoeux, pity, bonusSequences, sequenceIndex, scenario, garanti) {
   const box = document.createElement('div');
   box.className = 'status-box';
+  
+  // Si garanti, on utilise toujours le scénario "lose" pour la première séquence
+  let effectiveScenario = scenario;
+  if (garanti && sequenceIndex === 0) {
+    // En garanti, on est assuré d'avoir le perso au prochain 5*
+    // Donc on utilise le coût "lose" qui assume qu'on a déjà perdu le 50/50
+    effectiveScenario = 'lose';
+    // On ajuste le coût requis : au lieu de perdre puis gagner, on gagne directement
+    requiredPulls = 80; // Un seul pity suffit
+  }
   
   // La pity réduit le coût de TOUTES les séquences (comme les vœux actuels)
   const adjustedRequiredPulls = Math.max(0, requiredPulls - pity);
@@ -234,10 +255,15 @@ function makeStatusBox(requiredPulls, totalVoeux, pity, bonusSequences, sequence
   let sequencesFromVoeux = 0;
   for (let i = 0; i < data.length; i++) {
     let requiredForThisSeq;
-    switch(scenario) {
-      case 'worst': requiredForThisSeq = data[i].worst; break;
-      case 'lose': requiredForThisSeq = data[i].lose; break;
-      case 'win': requiredForThisSeq = data[i].win; break;
+    // Pour la première séquence avec garanti
+    if (garanti && i === 0) {
+      requiredForThisSeq = 80; // Garanti = 1 seul pity
+    } else {
+      switch(scenario) {
+        case 'worst': requiredForThisSeq = data[i].worst; break;
+        case 'lose': requiredForThisSeq = data[i].lose; break;
+        case 'win': requiredForThisSeq = data[i].win; break;
+      }
     }
     
     if (totalVoeuxWithPity >= requiredForThisSeq) {
@@ -270,6 +296,7 @@ function makeStatusBox(requiredPulls, totalVoeux, pity, bonusSequences, sequence
 }
 
 [astriteInput, voeuxInput, pityInput, corauxInput].forEach(el => el.addEventListener('input', render));
+garantiInput.addEventListener('change', render);
 
 // Charger les valeurs sauvegardées au démarrage
 loadSavedValues();
