@@ -92,6 +92,22 @@
     border-color: #4a2a2a;
     color: #ff6b6b;
   }
+  .tables-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .table-section {
+    flex: 1;
+    min-width: 400px;
+  }
+  .table-section h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+  .table-section .inputs {
+    margin-bottom: 15px;
+  }
 </style>
 </head>
 <body>
@@ -99,73 +115,77 @@
   <h1>Wuthering Waves – Calculateur de vœux et coraux</h1>
   <p>Entrez vos ressources pour voir combien de séquences vous pouvez atteindre. Les cases s'allument automatiquement selon vos vœux et coraux.</p>
   
-  <div class="inputs">
-    <div>
-      <label for="astrite">Astrite</label>
-      <input id="astrite" type="number" value="0" min="0">
+  <div class="tables-container">
+    <div class="table-section">
+      <h2>Personnage</h2>
+      <div class="inputs">
+        <div>
+          <label for="astrite">Astrite</label>
+          <input id="astrite" type="number" value="0" min="0">
+        </div>
+        <div>
+          <label for="voeux">Vœux actuels</label>
+          <input id="voeux" type="number" value="0" min="0">
+        </div>
+        <div>
+          <label for="pity">Pity actuelle</label>
+          <input id="pity" type="number" value="0" min="0" max="80">
+        </div>
+        <div>
+          <label for="coraux">Coraux</label>
+          <input id="coraux" type="number" value="0" min="0">
+        </div>
+        <div>
+          <label>Total vœux</label>
+          <div id="total-voeux" style="padding: 8px 10px; background: #0d111a; border: 1px solid var(--border); border-radius: 6px; color: var(--green); font-weight: bold; width: 120px;">0</div>
+        </div>
+        <div>
+          <label style="display: flex; align-items: center;">
+            <input id="garanti" type="checkbox">
+            <span style="margin-left: 5px;">Garanti</span>
+          </label>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Séquence</th>
+            <th>Worst</th>
+            <th>Lose 50/50</th>
+            <th>Win 50/50</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
     </div>
-    <div>
-      <label for="voeux">Vœux actuels</label>
-      <input id="voeux" type="number" value="0" min="0">
-    </div>
-    <div>
-      <label for="pity">Pity actuelle</label>
-      <input id="pity" type="number" value="0" min="0" max="80">
-    </div>
-    <div>
-      <label for="coraux">Coraux</label>
-      <input id="coraux" type="number" value="0" min="0">
-    </div>
-    <div>
-      <label style="display: flex; align-items: center;">
-        <input id="garanti" type="checkbox">
-        <span style="margin-left: 5px;">Garanti</span>
-      </label>
+
+    <div class="table-section">
+      <h2>Arme R5</h2>
+      <div class="inputs">
+        <div>
+          <label for="voeux-arme">Vœux arme</label>
+          <input id="voeux-arme" type="number" value="0" min="0">
+        </div>
+        <div>
+          <label for="pity-arme">Pity arme</label>
+          <input id="pity-arme" type="number" value="0" min="0" max="80">
+        </div>
+        <div>
+          <label>Total vœux arme</label>
+          <div id="total-voeux-arme" style="padding: 8px 10px; background: #0d111a; border: 1px solid var(--border); border-radius: 6px; color: var(--green); font-weight: bold; width: 120px;">0</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Rang</th>
+            <th>Vœux requis</th>
+          </tr>
+        </thead>
+        <tbody id="arme-table-body"></tbody>
+      </table>
     </div>
   </div>
-
-  <h2 style="font-size: 20px; margin-top: 30px; margin-bottom: 15px;">Arme R5</h2>
-  <div class="inputs">
-    <div>
-      <label for="voeux-arme">Vœux arme</label>
-      <input id="voeux-arme" type="number" value="0" min="0">
-    </div>
-    <div>
-      <label for="pity-arme">Pity arme</label>
-      <input id="pity-arme" type="number" value="0" min="0" max="80">
-    </div>
-    <div>
-      <label>Total vœux arme</label>
-      <div id="total-voeux-arme" style="padding: 8px 10px; background: #0d111a; border: 1px solid var(--border); border-radius: 6px; color: var(--green); font-weight: bold; width: 120px;">0</div>
-    </div>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Rang</th>
-        <th>Vœux requis</th>
-      </tr>
-    </thead>
-    <tbody id="arme-table-body"></tbody>
-  </table>
-
-  <h2 style="font-size: 20px; margin-top: 30px; margin-bottom: 15px;">Personnage</h2>
-      <label>Total vœux</label>
-      <div id="total-voeux" style="padding: 8px 10px; background: #0d111a; border: 1px solid var(--border); border-radius: 6px; color: var(--green); font-weight: bold; width: 120px;">0</div>
-    </div>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Séquence</th>
-        <th>Worst</th>
-        <th>Lose 50/50</th>
-        <th>Win 50/50</th>
-      </tr>
-    </thead>
-    <tbody id="table-body"></tbody>
-  </table>
 </div>
 <script>
 const data = [
@@ -332,23 +352,31 @@ function makeStatusBox(requiredPulls, totalVoeux, pity, bonusSequences, sequence
     let cumulativeCost = 0;
     for (let i = 0; i <= sequenceIndex; i++) {
       if (i === 0) {
-        // S0 avec garanti = 80 pulls (1 seul pity garanti)
+        // S0 avec garanti = 80 pulls (1 seul pity garanti) dans tous les cas
         cumulativeCost += 80;
       } else {
         // Après S0, on repart sur un 50/50 incertain
-        // On utilise les coûts incrémentaux normaux
         let costForThisSeq;
         switch(scenario) {
           case 'worst':
-            // Chaque séquence après S0 coûte 160 (worst case)
+            // Worst: on assume perdre tous les 50/50 = 160 pulls par séquence (80 perdu + 80 garanti)
             costForThisSeq = 160;
             break;
           case 'lose':
-            // Chaque séquence coûte 80 (on assume qu'on perd le 50/50 mais on a le garanti)
-            costForThisSeq = 80;
+            // Lose 50/50: on alterne gagner/perdre les 50/50
+            // Après S0 (garanti utilisé), on recommence sur 50/50
+            // Séquences impaires (S1, S3, S5...): on perd le 50/50 = 160 pulls (80 + 80)
+            // Séquences paires (S2, S4, S6...): on gagne le 50/50 = 80 pulls
+            if (i % 2 === 1) {
+              // Séquences impaires: on perd le 50/50
+              costForThisSeq = 160;
+            } else {
+              // Séquences paires: on gagne le 50/50
+              costForThisSeq = 80;
+            }
             break;
           case 'win':
-            // Chaque séquence coûte 80 (on win le 50/50)
+            // Win: on gagne tous les 50/50 = 80 pulls par séquence
             costForThisSeq = 80;
             break;
         }
@@ -372,12 +400,19 @@ function makeStatusBox(requiredPulls, totalVoeux, pity, bonusSequences, sequence
       let cumulative = 0;
       for (let j = 0; j <= i; j++) {
         if (j === 0) {
-          cumulative += 80; // S0 garanti
+          cumulative += 80; // S0 garanti = 80 dans tous les cas
         } else {
           switch(scenario) {
-            case 'worst': cumulative += 160; break;
-            case 'lose': cumulative += 80; break;
-            case 'win': cumulative += 80; break;
+            case 'worst': 
+              cumulative += 160;
+              break;
+            case 'lose':
+              // Alterner: S1 perd (160), S2 gagne (80), S3 perd (160), etc.
+              cumulative += (j % 2 === 1) ? 160 : 80;
+              break;
+            case 'win': 
+              cumulative += 80;
+              break;
           }
         }
       }
