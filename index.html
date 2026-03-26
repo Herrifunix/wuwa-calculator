@@ -345,12 +345,19 @@ function makeStatusBox(requiredPulls, totalVoeux, pity, bonusSequences, sequence
   const box = document.createElement('div');
   box.className = 'status-box';
   
-  // Calculer le coût cumulatif avec le garanti
-  let adjustedRequiredPulls = requiredPulls;
+  // CORRECTION: Les coraux réduisent l'objectif de tirage
+  // Si on a B séquences bonus, pour atteindre la séquence N (sequenceIndex),
+  // on n'a besoin de tirer que jusqu'à la séquence N-B.
+  const effectiveIndex = Math.max(0, sequenceIndex - bonusSequences);
+  
+  // Calculer le coût cumulatif avec le garanti pour l'index EFFECTIF
+  let adjustedRequiredPulls;
+  
   if (garanti) {
     // Si garanti est actif, on recalcule les coûts cumulatifs
     let cumulativeCost = 0;
-    for (let i = 0; i <= sequenceIndex; i++) {
+    // On boucle jusqu'à effectiveIndex
+    for (let i = 0; i <= effectiveIndex; i++) {
       if (i === 0) {
         // S0 avec garanti = 80 pulls (1 seul pity garanti) dans tous les cas
         cumulativeCost += 80;
@@ -384,13 +391,21 @@ function makeStatusBox(requiredPulls, totalVoeux, pity, bonusSequences, sequence
       }
     }
     adjustedRequiredPulls = cumulativeCost;
+  } else {
+    // Si pas garanti, on prend les valeurs du tableau pour l'index EFFECTIF
+    const effectiveRow = data[effectiveIndex];
+    switch(scenario) {
+      case 'worst': adjustedRequiredPulls = effectiveRow.worst; break;
+      case 'lose': adjustedRequiredPulls = effectiveRow.lose; break;
+      case 'win': adjustedRequiredPulls = effectiveRow.win; break;
+    }
   }
   
   // La pity réduit le coût de TOUTES les séquences (comme les vœux actuels)
   adjustedRequiredPulls = Math.max(0, adjustedRequiredPulls - pity);
   const totalVoeuxWithPity = totalVoeux + pity;
   
-  // Calculer combien de séquences on peut déjà atteindre avec nos vœux + pity
+  // Calculer combien de séquences on peut déjà atteindre avec nos vœux + pity (via le Gacha pur)
   let sequencesFromVoeux = 0;
   for (let i = 0; i < data.length; i++) {
     let requiredForThisSeq;
@@ -447,6 +462,7 @@ function makeStatusBox(requiredPulls, totalVoeux, pity, bonusSequences, sequence
     box.title = 'Séquence supplémentaire grâce aux coraux';
   } else {
     // Pas encore accessible - calculer les vœux manquants
+    // Le coût (adjustedRequiredPulls) est maintenant basé sur effectiveIndex
     const voeuxNeeded = Math.max(0, adjustedRequiredPulls - totalVoeux);
     box.classList.add('unreachable');
     box.textContent = Math.ceil(voeuxNeeded);
