@@ -168,8 +168,31 @@
       </div>
       <div class="progress-bar"><div id="protBar" class="progress-fill" style="width: 0%"></div></div>
       <div id="protHint" class="progress-hint">180g manquants</div>
+      </div>
     </div>
-  </div>
+    <div class="card">
+      <div class="label" style="margin-bottom: 12px;">// AJOUTER RAPIDE</div>
+      <div class="meal-grid" id="mealGrid"></div>
+      
+      <div class="custom-section">
+        <div class="custom-row">
+          <input type="text" id="customName" placeholder="Nom (opt)">
+          <input type="number" id="customCal" placeholder="Kcal" style="flex:0 0 60px">
+          <input type="number" id="customProt" placeholder="Prot" style="flex:0 0 60px">
+          <button class="btn-primary" onclick="addCustom()">LOG</button>
+        </div>
+        <div style="margin-top:8px">
+          <button class="meal-btn" style="width: 100%; border-color: rgba(248,113,113,0.3); text-align: center; display: block;" onclick="addMeal({id: 'tresor', name:'Tresor', emoji:'bol', cal:480, prot:25})">
+            <div style="font-size:12px;">Cheat: Bol Tresor (480 kcal ? 25g)</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="journalCard" class="card" style="display: none;">
+      <div class="label" style="margin-bottom: 12px;">// JOURNAL <span id="journalCount"></span></div>
+      <div id="journalList"></div>
+
 
       <div class="card" id="workoutsContainer">
       <div class="label" style="margin-bottom: 12px;">// ENTRAÎNEMENT (PROGRAMME COMPLET)</div>
