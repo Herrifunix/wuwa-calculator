@@ -133,7 +133,10 @@
     .weight-stats { gap: 16px; }
     .weight-stat .stat-value { font-size: 30px; }
   }
-</style>
+
+    .hist-day { width: 28px; height: 28px; border-radius: 50%; display:flex; align-items:center; justify-content:center; background:#1c1c1c; font-size:12px; font-weight:600; color:#666; border:1px solid #333; }
+    .hist-day.done { background:#c4ff00; color:#0e0e0e; border-color:#c4ff00; box-shadow: 0 0 8px rgba(196,255,0,0.4); }
+  </style>
 </head>
 <body>
 <header>
@@ -192,10 +195,10 @@
     <div id="journalCard" class="card" style="display: none;">
       <div class="label" style="margin-bottom: 12px;">// JOURNAL <span id="journalCount"></span></div>
       <div id="journalList"></div>
+    </div>
 
-
-      <div class="card" id="workoutsContainer">
-      <div class="label" style="margin-bottom: 12px;">// ENTRAÎNEMENT (PROGRAMME COMPLET)</div>
+    <div class="card" id="workoutsContainer">
+      <div class="label" style="margin-bottom: 12px;">// ENTRAÎNEMENT DU JOUR</div>
       <!-- Injected by JS -->
     </div>
 
@@ -514,28 +517,98 @@ function renderJournal() {
 
 
   
+    function getPastKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function getStreak() {
+    let streak = 0;
+    let d = new Date();
+    let todayKeyStr = todayKey();
+    let isTodayDone = today.workoutDoneObj && today.workoutDoneObj[d.getDay()];
+    
+    for (let i = 0; i < 365; i++) {
+       let pastD = new Date(Date.now() - i * 86400000);
+       let key = getPastKey(pastD);
+       let isDone = false;
+       
+       if (key === todayKeyStr) {
+          isDone = isTodayDone;
+          if (!isDone && i === 0) continue; 
+       } else {
+          try {
+             let t = localStorage.getItem('cutlog:day:' + key);
+             if (t) {
+                let parsed = JSON.parse(t);
+                if (parsed.workoutDoneObj && parsed.workoutDoneObj[pastD.getDay()]) {
+                   isDone = true;
+                }
+             }
+          } catch(e) {}
+       }
+       
+       if (isDone) streak++;
+       else if (i > 0) break;
+    }
+    return streak;
+  }
+
+  function getHistoryLine() {
+     let hist = [];
+     for(let i = 6; i >= 0; i--) {
+       let pastD = new Date(Date.now() - i * 86400000);
+       let key = getPastKey(pastD);
+       let dName = ['D','L','M','M','J','V','S'][pastD.getDay()];
+       let isDone = false;
+       if (key === todayKey()) {
+          isDone = today.workoutDoneObj && today.workoutDoneObj[pastD.getDay()];
+       } else {
+          try {
+             let t = localStorage.getItem('cutlog:day:' + key);
+             if (t) {
+                let parsed = JSON.parse(t);
+                if (parsed.workoutDoneObj && parsed.workoutDoneObj[pastD.getDay()]) {
+                   isDone = true;
+                }
+             }
+          } catch(e) {}
+       }
+       hist.push(`<div class="hist-day ${isDone ? 'done' : ''}">${dName}</div>`);
+     }
+     return hist.join('');
+  }
+
   function renderWorkout() {
     const container = document.getElementById('workoutsContainer');
     if (!container) return;
-    let html = '<div class="label" style="margin-bottom: 12px;">// ENTRAÎNEMENT (PROGRAMME COMPLET)</div>';
     
-    const daysOrder = [1, 2, 3, 4, 5, 6, 0];
-    const dayNames = {1:'LUNDI', 2:'MARDI', 3:'MERCREDI', 4:'JEUDI', 5:'VENDREDI', 6:'SAMEDI', 0:'DIMANCHE'};
     const todayDow = new Date().getDay();
+    const dayNames = {1:'LUNDI', 2:'MARDI', 3:'MERCREDI', 4:'JEUDI', 5:'VENDREDI', 6:'SAMEDI', 0:'DIMANCHE'};
+    
+    let streak = getStreak();
+    let histHtml = getHistoryLine();
 
-    daysOrder.forEach(dow => {
-      const def = DEFAULT_EXOS[dow];
-      if (!def) return;
-      
-      const dayName = dayNames[dow];
-      const isToday = dow === todayDow ? ' (AUJOURD\'HUI)' : '';
-      const isWorkingOut = today.workoutDoneObj && today.workoutDoneObj[dow];
+    let html = `<div class="label" style="margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
+       <span>// ENTRAÎNEMENT DU JOUR</span>
+       <span style="color:#FFA500; font-weight:bold;">🔥 Série : ${streak} jour${streak > 1 ? 's' : ''}</span>
+    </div>
+    <div style="display:flex; justify-content:center; gap:8px; margin-bottom: 16px;">
+      ${histHtml}
+    </div>`;
+    
+    const dow = todayDow;
+    const def = DEFAULT_EXOS[dow];
+    const dayName = dayNames[dow];
+    const isWorkingOut = today.workoutDoneObj && today.workoutDoneObj[dow];
 
+    if (def && (!def.items || def.items.length === 0)) {
+       html += `<div class="workout-header"><div class="workout-info"><div class="display workout-title"><span class="workout-icon">${def.icon}</span><span class="workoutName">${dayName} - ${def.title}</span></div><div class="workout-desc">${def.desc}</div></div></div><div class="workout-footer"><div class="workout-note">${def.note}</div><button class="workout-btn ${isWorkingOut ? 'done' : ''}" onclick="toggleWorkout(${dow})">${isWorkingOut ? '✓ REPOS PRIS' : 'MARQUER REPOS'}</button></div>`;
+    } else if (def) {
       html += `
-        <div class="workout-header" style="margin-top: 16px;">
+        <div class="workout-header">
           <div class="workout-info">
             <div class="display workout-title">
-              <span class="workout-icon">${def.icon}</span><span class="workoutName">${dayName} - ${def.title}${isToday}</span>
+              <span class="workout-icon">${def.icon}</span><span class="workoutName">${dayName} - ${def.title}</span>
             </div>
             <div class="workout-desc">${def.desc}</div>
           </div>
@@ -543,32 +616,32 @@ function renderJournal() {
         <div class="exo-list" id="exoList-${dow}"></div>
         <div class="workout-footer">
           <div class="workout-note">${def.note}</div>
-          ${def.items && def.items.length > 0 ? \`<button class="reset-btn" onclick="resetExos(${dow})" title="Restaurer reps/séries par défaut">? défaut</button>\` : ''}
+          <button class="reset-btn" onclick="resetExos(${dow})" title="Restaurer reps/séries par défaut">↺ défaut</button>
           <button class="workout-btn ${isWorkingOut ? 'done' : ''}" onclick="toggleWorkout(${dow})">${isWorkingOut ? '✓ FAIT' : 'MARQUER'}</button>
         </div>
       `;
-    });
+    }
+
     container.innerHTML = html;
 
-    daysOrder.forEach(dow => {
+    if (def && def.items && def.items.length > 0) {
       const exos = getExos(dow);
       const list = document.getElementById(`exoList-${dow}`);
       if (!list) return;
       exos.forEach((ex, idx) => {
         const code = dow + "-" + idx;
         let done = false;
-        // Migration of ex check array from prev version
         if (today.exosChecked && (today.exosChecked.includes(code) || (dow === todayDow && today.exosChecked.includes(idx)))) {
             done = true;
         }
         const row = document.createElement('div');
         row.className = 'exo-row' + (done ? ' done' : '');
         row.innerHTML = `
-          <div class="exo-check">${done ? '?' : ''}</div>
+          <div class="exo-check">${done ? '✓' : ''}</div>
           <div class="exo-name">${ex.name}</div>
           <div class="exo-reps">
             <input type="text" class="exo-input sets-input" value="${ex.sets}" data-idx="${idx}" data-field="sets" data-dow="${dow}">
-            <span>?</span>
+            <span>×</span>
             <input type="text" class="exo-input reps-input" value="${ex.reps}" data-idx="${idx}" data-field="reps" data-dow="${dow}">
           </div>
         `;
@@ -582,9 +655,8 @@ function renderJournal() {
         inp.addEventListener('input', (e) => editExo(parseInt(e.target.dataset.idx), e.target.dataset.field, e.target.value, parseInt(e.target.dataset.dow)));
         inp.addEventListener('click', e => e.stopPropagation());
       });
-    });
+    }
   }
-
   function toggleWorkout(dow) {
     if (!today.workoutDoneObj) today.workoutDoneObj = {};
     today.workoutDoneObj[dow] = !today.workoutDoneObj[dow];
