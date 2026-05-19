@@ -126,6 +126,47 @@
   .modal-tip { background: rgba(163,230,53,0.06); border-left: 2px solid #a3e635; padding: 10px 14px; margin-top: 20px; font-size: 12px; line-height: 1.5; color: #d4d4d8; }
   .modal-tip::before { content: '💡 '; }
 
+  .ingredient-table-header { display: grid; grid-template-columns: 1fr 90px 64px 60px; gap: 8px; font-size: 10px; color: #71717a; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 0 6px; border-bottom: 1px solid #27272a; }
+  .ingredient-row-modal { display: grid; grid-template-columns: 1fr 90px 64px 60px; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid #27272a; }
+  .ingredient-row-modal:last-child { border-bottom: none; }
+  .ing-name { font-size: 12px; color: #d4d4d8; line-height: 1.3; }
+  .ing-qty { font-size: 11px; color: #71717a; font-variant-numeric: tabular-nums; }
+  .ing-input { background: rgba(39,39,42,0.6); border: 1px solid #27272a; padding: 4px 6px; font-size: 11px; color: #f4f4f5; text-align: center; font-variant-numeric: tabular-nums; outline: none; width: 100%; transition: border 0.15s; }
+  .ing-input:focus { border-color: #a3e635; }
+
+  .ingredient-form { display: grid; grid-template-columns: 1fr 90px 64px 60px auto; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #27272a; }
+  .ingredient-form input { background: rgba(39,39,42,0.5); border: 1px solid #27272a; padding: 6px 8px; font-size: 12px; outline: none; color: #f4f4f5; min-width: 0; }
+  .ingredient-form input:focus { border-color: rgba(163,230,53,0.4); }
+  .ingredient-form .btn-primary { padding: 6px 10px; }
+
+  .ingredient-row { display: grid; grid-template-columns: auto 1fr 90px 60px 60px auto; gap: 8px; align-items: center; padding: 8px 4px; border-bottom: 1px solid #27272a; font-size: 12px; }
+  .ingredient-row:hover { background: rgba(39,39,42,0.3); }
+  .ingredient-row input[type=checkbox] { width: 16px; height: 16px; accent-color: #a3e635; cursor: pointer; }
+  .ingredient-row .ing-lib-name { color: #d4d4d8; line-height: 1.3; }
+  .ingredient-row .ing-lib-qty { color: #71717a; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .ingredient-row .ing-lib-cal, .ingredient-row .ing-lib-prot { color: #a1a1aa; font-size: 11px; text-align: right; font-variant-numeric: tabular-nums; }
+  .ingredient-row .ing-lib-del { color: #52525b; font-size: 14px; opacity: 0; transition: opacity 0.15s; padding: 0 4px; }
+  .ingredient-row:hover .ing-lib-del { opacity: 1; }
+  .ingredient-row .ing-lib-del:hover { color: #f87171; }
+  .ingredient-row.custom .ing-lib-name::before { content: '+ '; color: #a3e635; }
+
+  .ingredient-combine { margin-top: 14px; padding: 12px; background: rgba(163,230,53,0.06); border: 1px solid rgba(163,230,53,0.3); }
+  .ingredient-combine .combine-totals { font-size: 12px; color: #a3e635; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; margin-bottom: 8px; }
+  .ingredient-combine .combine-row { display: flex; gap: 8px; }
+  .ingredient-combine input { flex: 1; min-width: 0; background: rgba(39,39,42,0.5); border: 1px solid #27272a; padding: 6px 8px; font-size: 12px; outline: none; color: #f4f4f5; }
+  .ingredient-combine input:focus { border-color: rgba(163,230,53,0.4); }
+
+  @media (max-width: 480px) {
+    .ingredient-table-header { grid-template-columns: 1fr 60px 52px 48px; gap: 4px; font-size: 9px; }
+    .ingredient-row-modal { grid-template-columns: 1fr 60px 52px 48px; gap: 4px; }
+    .ing-qty { font-size: 10px; }
+    .ing-input { font-size: 10px; padding: 4px 4px; }
+    .ingredient-form { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .ingredient-form .btn-primary { grid-column: 1 / -1; }
+    .ingredient-row { grid-template-columns: auto 1fr 52px 48px auto; }
+    .ingredient-row .ing-lib-qty { display: none; }
+  }
+
   @media (max-width: 480px) {
     .meal-grid { grid-template-columns: 1fr; }
     .exo-row { grid-template-columns: auto 1fr; row-gap: 6px; }
@@ -197,6 +238,25 @@
       <div id="journalList"></div>
     </div>
 
+    <div class="card" id="ingredientsCard">
+      <div class="label" style="margin-bottom: 12px;">// BIBLIOTHÈQUE D'INGRÉDIENTS</div>
+      <div id="ingredientsList"></div>
+      <div class="ingredient-form">
+        <input type="text" id="newIngName" placeholder="Nom (ex. Banane)">
+        <input type="text" id="newIngQty" placeholder="Qté (ex. 120g)">
+        <input type="number" id="newIngCal" placeholder="kcal">
+        <input type="number" id="newIngProt" placeholder="prot">
+        <button class="btn-primary" onclick="addCustomIngredient()">+</button>
+      </div>
+      <div class="ingredient-combine" id="ingredientCombine" style="display:none;">
+        <div class="combine-totals">Sélectionnés : <span id="combineTotals">0 kcal · 0g prot</span></div>
+        <div class="combine-row">
+          <input type="text" id="combineName" placeholder="Nom du repas custom (opt)">
+          <button class="btn-primary" onclick="logCombined()">LOG</button>
+        </div>
+      </div>
+    </div>
+
     <div class="card" id="workoutsContainer">
       <div class="label" style="margin-bottom: 12px;">// ENTRAÎNEMENT DU JOUR</div>
       <!-- Injected by JS -->
@@ -262,20 +322,20 @@ const MEALS = [
 
 const RECIPES = {
   lunch: {
-    macros: '700 kcal · 60g prot · 1 portion',
-    batch: 'Batch 3 portions · 25 min',
+    portions: 3,
+    prepTime: '25 min',
     ingredients: [
-      '80g riz basmati cru',
-      "200g cuisses de poulet désossées",
-      '200g brocolis surgelés',
-      '1 cs huile olive',
-      'Sel, paprika, ail en poudre',
-      'Sauce soja (au service)',
+      { name: 'Riz basmati cru', qty: '240g', cal: 840, prot: 17 },
+      { name: 'Cuisses de poulet désossées', qty: '600g', cal: 900, prot: 132 },
+      { name: 'Brocolis surgelés', qty: '600g', cal: 150, prot: 18 },
+      { name: 'Huile olive', qty: '3 cs', cal: 270, prot: 0 },
+      { name: 'Sel, paprika, ail en poudre', qty: 'pm', cal: 0, prot: 0 },
+      { name: 'Sauce soja (au service)', qty: 'pm', cal: 0, prot: 0 },
     ],
     steps: [
       "Marinade poulet : sel + paprika + ail + 1 cs huile olive (idéalement 30 min de repos)",
       "Air Fryer panier 1 : poulet 200°C · 20-22 min · retourner à mi-cuisson",
-      "Riz à part (rice cooker ou casserole) : 250g cru pour 3 portions",
+      "Riz à part (rice cooker ou casserole) : 240g cru pour 3 portions",
       "Brocolis Air Fryer panier 2 : 180°C · 10-12 min · sans décongeler · filet d'huile + ail",
       "Diviser en 3 boîtes (4 jours max au frigo)",
       "Service : réchauffe 3 min micro-ondes · sauce soja par-dessus",
@@ -283,15 +343,15 @@ const RECIPES = {
     tip: "Mode SYNC sur ta Ninja Dual pour que poulet + brocolis finissent en même temps.",
   },
   dinner: {
-    macros: '750 kcal · 60g prot · 1 portion',
-    batch: 'Batch 3 portions · 30 min',
+    portions: 3,
+    prepTime: '30 min',
     ingredients: [
-      '250g pommes de terre crues en cubes 1cm',
-      '180g haché 5% MG',
-      '1/3 boîte tomates concassées (~80g)',
-      "1/2 oignon · 1 gousse d'ail",
-      '1 cs huile olive',
-      'Paprika, cumin, herbes, sel, poivre',
+      { name: 'Pommes de terre crues en cubes 1cm', qty: '750g', cal: 565, prot: 15 },
+      { name: 'Haché 5% MG cru', qty: '540g', cal: 755, prot: 119 },
+      { name: 'Tomates concassées', qty: '240g (~1/3 boîte ×3)', cal: 70, prot: 5 },
+      { name: "Oignon + ail", qty: '1.5 oignon · 3 gousses', cal: 105, prot: 3 },
+      { name: 'Huile olive', qty: '3 cs', cal: 270, prot: 0 },
+      { name: 'Paprika, cumin, herbes, sel, poivre', qty: 'pm', cal: 0, prot: 0 },
     ],
     steps: [
       "Patates en cubes : 1 cs huile + paprika + ail · max 500g/panier sinon ça cuit à la vapeur",
@@ -304,12 +364,12 @@ const RECIPES = {
     tip: "Plus de 500g de patates par panier = pas croustillant. Fais 2 fournées si besoin.",
   },
   skyr: {
-    macros: '200 kcal · 30g prot',
-    batch: 'Express · 2 min',
+    portions: 1,
+    prepTime: '2 min',
     ingredients: [
-      '250g skyr nature 0% (Lidl Milbona / Carrefour)',
-      '1 fruit (pomme, banane, fraises, framboises)',
-      'Cannelle ou vanille (optionnel)',
+      { name: 'Skyr nature 0% (Lidl Milbona / Carrefour)', qty: '250g', cal: 150, prot: 28 },
+      { name: 'Fruit (pomme, banane, fraises, framboises)', qty: '1', cal: 70, prot: 1 },
+      { name: 'Cannelle ou vanille (optionnel)', qty: 'pm', cal: 0, prot: 0 },
     ],
     steps: [
       "Fouetter le skyr 30s à la cuillère pour qu'il soit aérien",
@@ -319,11 +379,11 @@ const RECIPES = {
     tip: "Skyr Lidl à ~1.20€ les 450g = imbattable rapport prix/protéines.",
   },
   eggs: {
-    macros: '220 kcal · 18g prot',
-    batch: 'Batch 10 œufs · 15 min',
+    portions: 10,
+    prepTime: '15 min',
     ingredients: [
-      '10 œufs (pour 1 semaine)',
-      "Bol d'eau froide pour refroidir",
+      { name: 'Œuf', qty: '10', cal: 700, prot: 60 },
+      { name: "Eau froide pour refroidir", qty: '1 bol', cal: 0, prot: 0 },
     ],
     steps: [
       "Air Fryer : 120°C · 15 min · 10 œufs à plat dans un panier",
@@ -334,15 +394,16 @@ const RECIPES = {
     tip: "À l'Air Fryer la coquille se retire toute seule, sans s'arracher les ongles.",
   },
   tuna: {
-    macros: '600 kcal · 45g prot',
-    batch: 'Express · 12 min',
+    portions: 1,
+    prepTime: '12 min',
     ingredients: [
-      '70g pâtes crues (complètes si possible)',
-      '1 boîte thon naturel égouttée (~110g)',
-      "100g sauce tomate Mutti",
-      "1 gousse d'ail",
-      'Origan, basilic, piment',
-      '1 œuf dur (bonus prot)',
+      { name: 'Pâtes crues (complètes si possible)', qty: '70g', cal: 250, prot: 8 },
+      { name: 'Thon naturel égoutté', qty: '110g (1 boîte)', cal: 120, prot: 27 },
+      { name: "Sauce tomate Mutti", qty: '100g', cal: 30, prot: 2 },
+      { name: "Ail", qty: '1 gousse', cal: 5, prot: 0 },
+      { name: "Œuf dur (bonus prot)", qty: '1', cal: 70, prot: 6 },
+      { name: 'Huile olive', qty: '1 cc', cal: 30, prot: 0 },
+      { name: 'Origan, basilic, piment', qty: 'pm', cal: 0, prot: 0 },
     ],
     steps: [
       "Pâtes : eau bouillante salée 10 min",
@@ -355,12 +416,12 @@ const RECIPES = {
     tip: "Le repas anti-flemme du jeudi-vendredi quand le meal prep est fini.",
   },
   tresor: {
-    macros: '480 kcal · 25g prot',
-    batch: 'Express · 1 min',
+    portions: 1,
+    prepTime: '1 min',
     ingredients: [
-      '40g céréales Trésor (PÈSE-LES, sinon ça part vite)',
-      '200ml lait demi-écrémé',
-      '150g skyr 0% à côté (pour les prot)',
+      { name: 'Céréales Trésor (PÈSE-LES, sinon ça part vite)', qty: '40g', cal: 170, prot: 3 },
+      { name: 'Lait demi-écrémé', qty: '200ml', cal: 90, prot: 7 },
+      { name: 'Skyr 0% à côté (pour les prot)', qty: '150g', cal: 90, prot: 17 },
     ],
     steps: [
       "Mesurer 40g Trésor à la balance (pas au feeling)",
@@ -387,7 +448,6 @@ const DEFAULT_EXOS = {
          { name: 'Squats au poids du corps', sets: '4', reps: '15' },
          { name: 'Fentes alternées', sets: '3', reps: '10/jambe' },
          { name: 'Pont fessier (glute bridge)', sets: '4', reps: '15' },
-         { name: 'Donkey kicks', sets: '3', reps: '12/jambe' },
          { name: 'Mollets debout', sets: '3', reps: '20' },
        ], note: "Descends bien sur les squats, cuisses parallèles au sol minimum." },
   3: { title: 'CARDIO + ABDOS', icon: '◈', desc: 'Sangle abdo · cardio doux',
@@ -432,15 +492,31 @@ function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
 let today = { items: [], workoutDone: false, exosChecked: [] };
 let weights = [];
 let customExos = {};
+let customIngredients = [];
+let recipeOverrides = {};
+let combineSelected = new Set();
 
 function loadAll() {
   try { const t = localStorage.getItem(`cutlog:day:${todayKey()}`); if (t) today = { exosChecked: [], ...JSON.parse(t) }; } catch (e) {}
   try { const w = localStorage.getItem('cutlog:weights'); if (w) weights = JSON.parse(w); } catch (e) {}
   try { const c = localStorage.getItem('cutlog:custom-exos'); if (c) customExos = JSON.parse(c); } catch (e) {}
+  try { const ci = localStorage.getItem('cutlog:custom-ingredients'); if (ci) customIngredients = JSON.parse(ci); } catch (e) {}
+  try { const ro = localStorage.getItem('cutlog:recipe-overrides'); if (ro) recipeOverrides = JSON.parse(ro); } catch (e) {}
+  let dirty = false;
+  Object.keys(customExos).forEach(dow => {
+    if (Array.isArray(customExos[dow])) {
+      const before = customExos[dow].length;
+      customExos[dow] = customExos[dow].filter(it => it && it.name !== 'Donkey kicks');
+      if (customExos[dow].length !== before) dirty = true;
+    }
+  });
+  if (dirty) saveCustomExos();
 }
 function saveToday() { localStorage.setItem(`cutlog:day:${todayKey()}`, JSON.stringify(today)); }
 function saveWeights() { localStorage.setItem('cutlog:weights', JSON.stringify(weights)); }
 function saveCustomExos() { localStorage.setItem('cutlog:custom-exos', JSON.stringify(customExos)); }
+function saveCustomIngredients() { localStorage.setItem('cutlog:custom-ingredients', JSON.stringify(customIngredients)); }
+function saveRecipeOverrides() { localStorage.setItem('cutlog:recipe-overrides', JSON.stringify(recipeOverrides)); }
 
 function getExos(dow) {
   if (customExos[dow]) return customExos[dow];
@@ -738,7 +814,111 @@ function renderChart() {
   `;
 }
 
-function renderAll() { renderHeader(); renderStats(); renderJournal(); renderWorkout(); renderWeight(); }
+function renderAll() { renderHeader(); renderStats(); renderJournal(); renderWorkout(); renderWeight(); renderIngredients(); }
+
+function getIngredientsLibrary() {
+  const seen = new Map();
+  Object.keys(RECIPES).forEach(rid => {
+    const ings = getMergedIngredients(rid);
+    ings.forEach(ing => {
+      if (!ing.name || ing.cal === 0 && ing.prot === 0) return;
+      const key = ing.name.toLowerCase().trim();
+      if (!seen.has(key)) {
+        seen.set(key, { name: ing.name, qty: ing.qty, cal: ing.cal, prot: ing.prot, source: 'recipe' });
+      }
+    });
+  });
+  customIngredients.forEach((ing, i) => {
+    const key = (ing.name || '').toLowerCase().trim();
+    seen.set(key + '::custom' + i, { name: ing.name, qty: ing.qty || '', cal: Number(ing.cal) || 0, prot: Number(ing.prot) || 0, source: 'custom', customIdx: i });
+  });
+  return Array.from(seen.values());
+}
+
+function renderIngredients() {
+  const listEl = document.getElementById('ingredientsList');
+  if (!listEl) return;
+  const lib = getIngredientsLibrary();
+  if (lib.length === 0) {
+    listEl.innerHTML = '<div style="font-size:11px;color:#71717a;padding:8px 0;">Aucun ingrédient. Ajoute-en un ci-dessous.</div>';
+  } else {
+    listEl.innerHTML = lib.map((ing, i) => {
+      const id = `ing-${i}`;
+      const checked = combineSelected.has(i) ? 'checked' : '';
+      const delBtn = ing.source === 'custom' ? `<button class="ing-lib-del" onclick="deleteCustomIngredient(${ing.customIdx})" title="Supprimer">✕</button>` : '<span></span>';
+      return `
+        <div class="ingredient-row ${ing.source === 'custom' ? 'custom' : ''}">
+          <input type="checkbox" id="${id}" ${checked} onchange="toggleCombine(${i}, this.checked)">
+          <label for="${id}" class="ing-lib-name">${ing.name}</label>
+          <div class="ing-lib-qty">${ing.qty}</div>
+          <div class="ing-lib-cal">${Math.round(ing.cal)} kcal</div>
+          <div class="ing-lib-prot">${Math.round(ing.prot)}g</div>
+          ${delBtn}
+        </div>
+      `;
+    }).join('');
+  }
+  updateCombineUI();
+}
+
+function toggleCombine(idx, checked) {
+  if (checked) combineSelected.add(idx);
+  else combineSelected.delete(idx);
+  updateCombineUI();
+}
+
+function updateCombineUI() {
+  const box = document.getElementById('ingredientCombine');
+  if (!box) return;
+  if (combineSelected.size === 0) {
+    box.style.display = 'none';
+    return;
+  }
+  const lib = getIngredientsLibrary();
+  const totals = Array.from(combineSelected).reduce((acc, i) => {
+    const ing = lib[i];
+    if (!ing) return acc;
+    return { cal: acc.cal + ing.cal, prot: acc.prot + ing.prot };
+  }, { cal: 0, prot: 0 });
+  document.getElementById('combineTotals').textContent = `${Math.round(totals.cal)} kcal · ${Math.round(totals.prot)}g prot`;
+  box.style.display = 'block';
+}
+
+function addCustomIngredient() {
+  const name = document.getElementById('newIngName').value.trim();
+  const qty = document.getElementById('newIngQty').value.trim();
+  const cal = parseInt(document.getElementById('newIngCal').value);
+  const prot = parseInt(document.getElementById('newIngProt').value) || 0;
+  if (!name || isNaN(cal)) return;
+  customIngredients.push({ name, qty, cal, prot });
+  saveCustomIngredients();
+  document.getElementById('newIngName').value = '';
+  document.getElementById('newIngQty').value = '';
+  document.getElementById('newIngCal').value = '';
+  document.getElementById('newIngProt').value = '';
+  renderIngredients();
+}
+
+function deleteCustomIngredient(idx) {
+  if (!confirm('Supprimer cet ingrédient ?')) return;
+  customIngredients.splice(idx, 1);
+  saveCustomIngredients();
+  combineSelected.clear();
+  renderIngredients();
+}
+
+function logCombined() {
+  if (combineSelected.size === 0) return;
+  const lib = getIngredientsLibrary();
+  const selected = Array.from(combineSelected).map(i => lib[i]).filter(Boolean);
+  const totals = selected.reduce((acc, ing) => ({ cal: acc.cal + ing.cal, prot: acc.prot + ing.prot }), { cal: 0, prot: 0 });
+  const nameInput = document.getElementById('combineName').value.trim();
+  const name = nameInput || ('Mix : ' + selected.map(s => s.name).join(' + '));
+  addMeal({ id: 'mix-' + Date.now(), name, emoji: '🥗', cal: Math.round(totals.cal), prot: Math.round(totals.prot) });
+  combineSelected.clear();
+  document.getElementById('combineName').value = '';
+  renderIngredients();
+}
 
 function addMeal(meal) {
   today.items.push({ ...meal, ts: Date.now() + Math.random() });
@@ -768,18 +948,63 @@ function logWeight() {
   renderHeader(); renderWeight();
 }
 
+function getMergedIngredients(id) {
+  const r = RECIPES[id];
+  if (!r) return [];
+  const ov = recipeOverrides[id] || {};
+  return r.ingredients.map((ing, idx) => {
+    const o = ov[idx] || {};
+    return {
+      name: ing.name,
+      qty: ing.qty,
+      cal: o.cal != null ? Number(o.cal) : Number(ing.cal) || 0,
+      prot: o.prot != null ? Number(o.prot) : Number(ing.prot) || 0,
+    };
+  });
+}
+
+function updateRecipeIngredient(id, idx, field, value) {
+  if (!recipeOverrides[id]) recipeOverrides[id] = {};
+  if (!recipeOverrides[id][idx]) recipeOverrides[id][idx] = {};
+  const v = value === '' ? 0 : Number(value);
+  recipeOverrides[id][idx][field] = isNaN(v) ? 0 : v;
+  saveRecipeOverrides();
+  const ings = getMergedIngredients(id);
+  const totals = ings.reduce((acc, ing) => ({ cal: acc.cal + ing.cal, prot: acc.prot + ing.prot }), { cal: 0, prot: 0 });
+  const r = RECIPES[id];
+  const perPort = r.portions > 1 ? ` · ${Math.round(totals.cal / r.portions)} kcal/portion` : '';
+  const portLabel = r.portions === 1 ? '1 portion' : `${r.portions} portions`;
+  const macrosEl = document.getElementById('modalMacros');
+  if (macrosEl) macrosEl.textContent = `${Math.round(totals.cal)} kcal · ${Math.round(totals.prot)}g prot · ${portLabel}${perPort}`;
+}
+
 function openRecipe(id) {
   const meal = MEALS.find(m => m.id === id);
   const r = RECIPES[id];
   if (!meal || !r) return;
+  const ings = getMergedIngredients(id);
+  const totals = ings.reduce((acc, ing) => ({ cal: acc.cal + ing.cal, prot: acc.prot + ing.prot }), { cal: 0, prot: 0 });
+  const perPort = r.portions > 1 ? ` · ${Math.round(totals.cal / r.portions)} kcal/portion` : '';
+  const portLabel = r.portions === 1 ? '1 portion' : `${r.portions} portions`;
+  const ingredientsHtml = ings.map((ing, idx) => `
+    <div class="ingredient-row-modal">
+      <div class="ing-name">${ing.name}</div>
+      <div class="ing-qty">${ing.qty}</div>
+      <input type="number" class="ing-input" value="${ing.cal}" onchange="updateRecipeIngredient('${id}', ${idx}, 'cal', this.value)" aria-label="kcal">
+      <input type="number" class="ing-input" value="${ing.prot}" onchange="updateRecipeIngredient('${id}', ${idx}, 'prot', this.value)" aria-label="prot">
+    </div>
+  `).join('');
   document.getElementById('modalBody').innerHTML = `
     <div class="modal-emoji">${meal.emoji}</div>
     <div class="modal-title">${meal.name.toUpperCase()}</div>
-    <div class="modal-macros">${r.macros}</div>
-    <div class="modal-batch">${r.batch}</div>
+    <div class="modal-macros" id="modalMacros">${Math.round(totals.cal)} kcal · ${Math.round(totals.prot)}g prot · ${portLabel}${perPort}</div>
+    <div class="modal-batch">Batch ${portLabel} · ${r.prepTime}</div>
     <div class="modal-section">
-      <h3>// Ingrédients</h3>
-      <ul>${r.ingredients.map(i => `<li>${i}</li>`).join('')}</ul>
+      <h3>// Ingrédients (batch complet)</h3>
+      <div class="ingredient-table-header">
+        <div>Nom</div><div>Quantité</div><div>kcal</div><div>prot</div>
+      </div>
+      ${ingredientsHtml}
     </div>
     <div class="modal-section">
       <h3>// Préparation</h3>
