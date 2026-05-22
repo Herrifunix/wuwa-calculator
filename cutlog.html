@@ -454,11 +454,11 @@ const DEFAULT_EXOS = {
        items: [
          { name: 'Mountain climbers lents', sets: '4', reps: '30s' },
          { name: 'Crunchs', sets: '3', reps: '15' },
-         { name: 'Bicycle crunch', sets: '3', reps: '15/côté' },
          { name: 'Leg raises (jambes au sol → verticale)', sets: '3', reps: '12' },
          { name: 'Dead bug', sets: '3', reps: '10/côté' },
-         { name: 'Superman', sets: '3', reps: '15' },
-       ], note: "Cardio doux pour épargner les genoux à ton poids actuel." },
+         { name: 'Gainage planche (sur genoux si besoin)', sets: '3', reps: '20-30s' },
+         { name: 'Gainage latéral', sets: '2', reps: '15-20s/côté' },
+       ], note: "Le gainage tu tiens juste la position, pas besoin d'abdos solides. Commence sur les genoux et allonge le temps petit à petit." },
   4: { title: 'REPOS ACTIF', icon: '◇', desc: 'Étirements · marche',
        items: [
          { name: 'Étirements complets', sets: '1', reps: '15 min' },
@@ -470,9 +470,8 @@ const DEFAULT_EXOS = {
          { name: 'Pompes', sets: '3', reps: 'max' },
          { name: 'Fentes inversées', sets: '3', reps: '10/jambe' },
          { name: 'Pont fessier 1 jambe', sets: '3', reps: '10/jambe' },
-         { name: 'Gainage planche', sets: '3', reps: '45s' },
-         { name: 'Superman', sets: '3', reps: '15' },
-       ], note: "Rythme soutenu, 45-60s de repos entre les séries max." },
+         { name: 'Gainage planche (sur genoux si besoin)', sets: '3', reps: '20-30s' },
+       ], note: "Rythme soutenu, 45-60s de repos entre les séries max. Le gainage : tiens la position, c'est tout." },
   6: { title: 'HIIT (SANS SAUT)', icon: '◉', desc: 'Intervalles · épargne les genoux',
        items: [
          { name: 'Mountain climbers', sets: '5', reps: '30s' },
@@ -502,11 +501,12 @@ function loadAll() {
   try { const c = localStorage.getItem('cutlog:custom-exos'); if (c) customExos = JSON.parse(c); } catch (e) {}
   try { const ci = localStorage.getItem('cutlog:custom-ingredients'); if (ci) customIngredients = JSON.parse(ci); } catch (e) {}
   try { const ro = localStorage.getItem('cutlog:recipe-overrides'); if (ro) recipeOverrides = JSON.parse(ro); } catch (e) {}
+  const removedExos = ['Donkey kicks', 'Superman', 'Bicycle crunch'];
   let dirty = false;
   Object.keys(customExos).forEach(dow => {
     if (Array.isArray(customExos[dow])) {
       const before = customExos[dow].length;
-      customExos[dow] = customExos[dow].filter(it => it && it.name !== 'Donkey kicks');
+      customExos[dow] = customExos[dow].filter(it => it && !removedExos.includes(it.name));
       if (customExos[dow].length !== before) dirty = true;
     }
   });
