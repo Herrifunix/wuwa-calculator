@@ -1109,8 +1109,11 @@ document.getElementById('fsSearch').addEventListener('keydown', e => { if (e.key
 window.addEventListener('resize', renderChart);
 
 // --- FatSecret integration ---
-const FS_TOKEN_URL = 'https://oauth.fatsecret.com/connect/token';
-const FS_API_URL = 'https://platform.fatsecret.com/rest/server.api';
+// FatSecret bloque les appels directs depuis le navigateur (CORS).
+// Lance `node fs-proxy.js` dans le dossier pour démarrer le proxy local.
+const FS_PROXY = localStorage.getItem('cutlog:fs-proxy') || 'http://localhost:8787';
+const FS_TOKEN_URL = FS_PROXY + '/token';
+const FS_API_URL = FS_PROXY + '/api';
 let fsToken = null;
 let fsTokenExp = 0;
 let fsResultsCache = [];
