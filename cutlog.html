@@ -1147,16 +1147,28 @@ async function fsGetToken() {
   const secret = localStorage.getItem('cutlog:fs-secret');
   if (!id || !secret) throw new Error('Clés API manquantes — clique ⚙');
   const basic = btoa(id + ':' + secret);
-  const res = await fetch(FS_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Authorization': 'Basic ' + basic, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'grant_type=client_credentials&scope=basic',
-  });
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error('Token ' + res.status + ' — ' + t.slice(0, 100));
+  let res;
+  try {
+    res = await fetch(FS_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Authorization': 'Basic ' + basic, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=client_credentials&scope=basic',
+    });
+  } catch (e) {
+    console.error('[FatSecret token] network/CORS error', e);
+    throw new Error('Réseau/CORS bloqué — voir console (F12)');
   }
-  const data = await res.json();
+  const bodyText = await res.text();
+  console.log('[FatSecret token]', res.status, bodyText);
+  if (!res.ok) {
+    let detail = bodyText.slice(0, 200);
+    try {
+      const j = JSON.parse(bodyText);
+      detail = (j.error || res.status) + (j.error_description ? ' — ' + j.error_description : '');
+    } catch (_) {}
+    throw new Error('Token ' + res.status + ' · ' + detail);
+  }
+  const data = JSON.parse(bodyText);
   fsToken = data.access_token;
   fsTokenExp = Date.now() + (data.expires_in || 3600) * 1000;
   return fsToken;
