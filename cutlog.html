@@ -14,14 +14,26 @@
   input[type=number] { -moz-appearance: textfield; }
   button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 
-  .container { max-width: 640px; margin: 0 auto; padding: 0 20px 48px; }
+  .container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 12px 48px;
+  }
 
   header { border-bottom: 1px solid #27272a; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
   .label { font-size: 10px; color: #71717a; letter-spacing: 0.15em; text-transform: uppercase; }
   .live-dot { display: inline-block; width: 6px; height: 6px; background: #a3e635; border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite; vertical-align: middle; }
   @keyframes pulse { 0%,100% {opacity:1} 50% {opacity:0.5} }
 
-  .card { background: rgba(24,24,27,0.5); border: 1px solid #27272a; padding: 20px; margin-top: 16px; }
+  .card {
+    background: rgba(24,24,27,0.5);
+    border: 1px solid #27272a;
+    padding: 20px;
+    grid-column: 1 / -1;
+  }
 
   .progress-row { margin-bottom: 20px; }
   .progress-row:last-child { margin-bottom: 0; }
@@ -175,8 +187,10 @@
     .weight-stat .stat-value { font-size: 30px; }
   }
 
-    .hist-day { width: 28px; height: 28px; border-radius: 50%; display:flex; align-items:center; justify-content:center; background:#1c1c1c; font-size:12px; font-weight:600; color:#666; border:1px solid #333; }
+    .hist-day { width: 28px; height: 28px; border-radius: 50%; display:flex; align-items:center; justify-content:center; background:#1c1c1c; font-size:12px; font-weight:600; color:#666; border:1px solid #333; cursor: pointer; transition: all 0.15s; }
+    .hist-day:hover { border-color: #a3e635; color: #a3e635; }
     .hist-day.done { background:#c4ff00; color:#0e0e0e; border-color:#c4ff00; box-shadow: 0 0 8px rgba(196,255,0,0.4); }
+    .hist-day.selected { border-color: #a3e635; box-shadow: 0 0 12px rgba(163,230,53,0.6); }
 
   .fs-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid #27272a; }
   .fs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -205,7 +219,36 @@
   .fs-config .btn-primary { padding: 6px 10px; font-size: 11px; }
   .fs-config-hint { font-size: 10px; color: #71717a; letter-spacing: 0.05em; line-height: 1.4; }
 
-  @media (max-width: 480px) {
+  .workout-food-row {
+    display: contents;
+  }
+
+  #workoutsContainer {
+    grid-column: 1 !important;
+    grid-row: auto;
+  }
+
+  #ingredientsCard {
+    grid-column: 2 !important;
+    grid-row: auto;
+  }
+
+  .card:last-of-type {
+    grid-column: 1 / -1;
+  }
+
+  .hist-day-selector { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .selected-day-label { font-size: 10px; color: #a3e635; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+
+  @media (max-width: 768px) {
+    .container {
+      grid-template-columns: 1fr;
+    }
+
+    .workout-food-row > .card {
+      grid-column: auto;
+    }
+  }
     .fs-result-row { grid-template-columns: 1fr 48px auto; gap: 4px; }
     .fs-result-row .fs-macro { display: none; }
     .fs-config-row { grid-template-columns: 1fr; }
@@ -292,28 +335,30 @@
       <div id="journalList"></div>
     </div>
 
-    <div class="card" id="ingredientsCard">
-      <div class="label" style="margin-bottom: 12px;">// BIBLIOTHÈQUE D'INGRÉDIENTS</div>
-      <div id="ingredientsList"></div>
-      <div class="ingredient-form">
-        <input type="text" id="newIngName" placeholder="Nom (ex. Banane)">
-        <input type="text" id="newIngQty" placeholder="Qté (ex. 120g)">
-        <input type="number" id="newIngCal" placeholder="kcal">
-        <input type="number" id="newIngProt" placeholder="prot">
-        <button class="btn-primary" onclick="addCustomIngredient()">+</button>
+    <div class="workout-food-row">
+      <div class="card" id="workoutsContainer">
+        <div class="label" style="margin-bottom: 12px;">// ENTRAÎNEMENT DU JOUR</div>
+        <!-- Injected by JS -->
       </div>
-      <div class="ingredient-combine" id="ingredientCombine" style="display:none;">
-        <div class="combine-totals">Sélectionnés : <span id="combineTotals">0 kcal · 0g prot</span></div>
-        <div class="combine-row">
-          <input type="text" id="combineName" placeholder="Nom du repas custom (opt)">
-          <button class="btn-primary" onclick="logCombined()">LOG</button>
+
+      <div class="card" id="ingredientsCard">
+        <div class="label" style="margin-bottom: 12px;">// BIBLIOTHÈQUE D'INGRÉDIENTS</div>
+        <div id="ingredientsList"></div>
+        <div class="ingredient-form">
+          <input type="text" id="newIngName" placeholder="Nom (ex. Banane)">
+          <input type="text" id="newIngQty" placeholder="Qté (ex. 120g)">
+          <input type="number" id="newIngCal" placeholder="kcal">
+          <input type="number" id="newIngProt" placeholder="prot">
+          <button class="btn-primary" onclick="addCustomIngredient()">+</button>
+        </div>
+        <div class="ingredient-combine" id="ingredientCombine" style="display:none;">
+          <div class="combine-totals">Sélectionnés : <span id="combineTotals">0 kcal · 0g prot</span></div>
+          <div class="combine-row">
+            <input type="text" id="combineName" placeholder="Nom du repas custom (opt)">
+            <button class="btn-primary" onclick="logCombined()">LOG</button>
+          </div>
         </div>
       </div>
-    </div>
-
-    <div class="card" id="workoutsContainer">
-      <div class="label" style="margin-bottom: 12px;">// ENTRAÎNEMENT DU JOUR</div>
-      <!-- Injected by JS -->
     </div>
 
 <div class="card">
@@ -548,6 +593,7 @@ let customExos = {};
 let customIngredients = [];
 let recipeOverrides = {};
 let combineSelected = new Set();
+let selectedWorkoutDay = null; // null = today, else 0-6 (day of week)
 
 function loadAll() {
   try { const t = localStorage.getItem(`cutlog:day:${todayKey()}`); if (t) today = { exosChecked: [], ...JSON.parse(t) }; } catch (e) {}
@@ -703,36 +749,46 @@ function renderJournal() {
              }
           } catch(e) {}
        }
-       hist.push(`<div class="hist-day ${isDone ? 'done' : ''}">${dName}</div>`);
+       let isSelected = selectedWorkoutDay === pastD.getDay();
+       hist.push(`<div class="hist-day ${isDone ? 'done' : ''} ${isSelected ? 'selected' : ''}" onclick="selectWorkoutDay(${pastD.getDay()})" title="${dName} · Clic pour voir le programme">${dName}</div>`);
      }
      return hist.join('');
+  }
+
+  function selectWorkoutDay(dow) {
+    const todayDow = new Date().getDay();
+    selectedWorkoutDay = (dow === todayDow && selectedWorkoutDay === todayDow) ? null : dow;
+    renderWorkout();
   }
 
   function renderWorkout() {
     const container = document.getElementById('workoutsContainer');
     if (!container) return;
-    
+
     const todayDow = new Date().getDay();
+    const displayDow = selectedWorkoutDay !== null ? selectedWorkoutDay : todayDow;
     const dayNames = {1:'LUNDI', 2:'MARDI', 3:'MERCREDI', 4:'JEUDI', 5:'VENDREDI', 6:'SAMEDI', 0:'DIMANCHE'};
-    
+
     let streak = getStreak();
     let histHtml = getHistoryLine();
 
+    const selectedLabel = selectedWorkoutDay !== null && selectedWorkoutDay !== todayDow ?
+      `<span style="color:#a3e635; font-weight:bold; font-size:11px;">→ PROGRAMME SÉLECTIONNÉ</span>` : '';
+
     let html = `<div class="label" style="margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
-       <span>// ENTRAÎNEMENT DU JOUR</span>
+       <span>// ENTRAÎNEMENT ${selectedWorkoutDay !== null && selectedWorkoutDay !== todayDow ? `(${dayNames[displayDow]})` : 'DU JOUR'}</span>
        <span style="color:#FFA500; font-weight:bold;">🔥 Série : ${streak} jour${streak > 1 ? 's' : ''}</span>
     </div>
     <div style="display:flex; justify-content:center; gap:8px; margin-bottom: 16px;">
       ${histHtml}
     </div>`;
-    
-    const dow = todayDow;
-    const def = DEFAULT_EXOS[dow];
-    const dayName = dayNames[dow];
-    const isWorkingOut = today.workoutDoneObj && today.workoutDoneObj[dow];
+
+    const def = DEFAULT_EXOS[displayDow];
+    const dayName = dayNames[displayDow];
+    const isWorkingOut = today.workoutDoneObj && today.workoutDoneObj[displayDow];
 
     if (def && (!def.items || def.items.length === 0)) {
-       html += `<div class="workout-header"><div class="workout-info"><div class="display workout-title"><span class="workout-icon">${def.icon}</span><span class="workoutName">${dayName} - ${def.title}</span></div><div class="workout-desc">${def.desc}</div></div></div><div class="workout-footer"><div class="workout-note">${def.note}</div><button class="workout-btn ${isWorkingOut ? 'done' : ''}" onclick="toggleWorkout(${dow})">${isWorkingOut ? '✓ REPOS PRIS' : 'MARQUER REPOS'}</button></div>`;
+       html += `<div class="workout-header"><div class="workout-info"><div class="display workout-title"><span class="workout-icon">${def.icon}</span><span class="workoutName">${dayName} - ${def.title}</span></div><div class="workout-desc">${def.desc}</div></div></div><div class="workout-footer"><div class="workout-note">${def.note}</div><button class="workout-btn ${isWorkingOut ? 'done' : ''}" onclick="toggleWorkout(${displayDow})">${isWorkingOut ? '✓ REPOS PRIS' : 'MARQUER REPOS'}</button></div>`;
     } else if (def) {
       html += `
         <div class="workout-header">
@@ -743,11 +799,11 @@ function renderJournal() {
             <div class="workout-desc">${def.desc}</div>
           </div>
         </div>
-        <div class="exo-list" id="exoList-${dow}"></div>
+        <div class="exo-list" id="exoList-${displayDow}"></div>
         <div class="workout-footer">
           <div class="workout-note">${def.note}</div>
-          <button class="reset-btn" onclick="resetExos(${dow})" title="Restaurer reps/séries par défaut">↺ défaut</button>
-          <button class="workout-btn ${isWorkingOut ? 'done' : ''}" onclick="toggleWorkout(${dow})">${isWorkingOut ? '✓ FAIT' : 'MARQUER'}</button>
+          <button class="reset-btn" onclick="resetExos(${displayDow})" title="Restaurer reps/séries par défaut">↺ défaut</button>
+          <button class="workout-btn ${isWorkingOut ? 'done' : ''}" onclick="toggleWorkout(${displayDow})">${isWorkingOut ? '✓ FAIT' : 'MARQUER'}</button>
         </div>
       `;
     }
@@ -755,13 +811,13 @@ function renderJournal() {
     container.innerHTML = html;
 
     if (def && def.items && def.items.length > 0) {
-      const exos = getExos(dow);
-      const list = document.getElementById(`exoList-${dow}`);
+      const exos = getExos(displayDow);
+      const list = document.getElementById(`exoList-${displayDow}`);
       if (!list) return;
       exos.forEach((ex, idx) => {
-        const code = dow + "-" + idx;
+        const code = displayDow + "-" + idx;
         let done = false;
-        if (today.exosChecked && (today.exosChecked.includes(code) || (dow === todayDow && today.exosChecked.includes(idx)))) {
+        if (today.exosChecked && (today.exosChecked.includes(code) || (displayDow === todayDow && today.exosChecked.includes(idx)))) {
             done = true;
         }
         const row = document.createElement('div');
@@ -770,14 +826,14 @@ function renderJournal() {
           <div class="exo-check">${done ? '✓' : ''}</div>
           <div class="exo-name">${ex.name}</div>
           <div class="exo-reps">
-            <input type="text" class="exo-input sets-input" value="${ex.sets}" data-idx="${idx}" data-field="sets" data-dow="${dow}">
+            <input type="text" class="exo-input sets-input" value="${ex.sets}" data-idx="${idx}" data-field="sets" data-dow="${displayDow}">
             <span>×</span>
-            <input type="text" class="exo-input reps-input" value="${ex.reps}" data-idx="${idx}" data-field="reps" data-dow="${dow}">
+            <input type="text" class="exo-input reps-input" value="${ex.reps}" data-idx="${idx}" data-field="reps" data-dow="${displayDow}">
           </div>
         `;
         row.onclick = (e) => {
           if (e.target.tagName === 'INPUT') return;
-          toggleExo(idx, dow);
+          toggleExo(idx, displayDow);
         };
         list.appendChild(row);
       });
