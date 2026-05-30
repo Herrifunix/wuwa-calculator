@@ -248,7 +248,7 @@
     .workout-food-row > .card {
       grid-column: auto;
     }
-  }
+
     .fs-result-row { grid-template-columns: 1fr 48px auto; gap: 4px; }
     .fs-result-row .fs-macro { display: none; }
     .fs-config-row { grid-template-columns: 1fr; }
@@ -1166,10 +1166,12 @@ window.addEventListener('resize', renderChart);
 
 // --- FatSecret integration ---
 // FatSecret bloque les appels directs depuis le navigateur (CORS).
-// Lance `node fs-proxy.js` dans le dossier pour démarrer le proxy local.
-const FS_PROXY = localStorage.getItem('cutlog:fs-proxy') || 'http://localhost:8787';
-const FS_TOKEN_URL = FS_PROXY + '/token';
-const FS_API_URL = FS_PROXY + '/api';
+// En local : lance `node fs-proxy.js` pour le proxy Node local
+// Sur Vercel : utilise /api/fs-proxy (Vercel function)
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const FS_PROXY = isLocal ? 'http://localhost:8787' : '/api/fs-proxy';
+const FS_TOKEN_URL = FS_PROXY + (isLocal ? '/token' : '?path=token');
+const FS_API_URL = FS_PROXY + (isLocal ? '/api' : '?path=api');
 let fsToken = null;
 let fsTokenExp = 0;
 let fsResultsCache = [];
