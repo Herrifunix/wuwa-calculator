@@ -253,6 +253,35 @@
     .fs-result-row .fs-macro { display: none; }
     .fs-config-row { grid-template-columns: 1fr; }
   }
+
+  .streak-badge { transition: color 0.3s; }
+
+  .celebrate-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    display: none; align-items: center; justify-content: center;
+    pointer-events: none; overflow: hidden;
+  }
+  .celebrate-overlay.active { display: flex; }
+  .celebrate-burst {
+    text-align: center;
+    animation: burstPop 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  }
+  .celebrate-emoji { font-size: 96px; line-height: 1; filter: drop-shadow(0 0 24px rgba(163,230,53,0.5)); }
+  .celebrate-num { font-family: 'Bebas Neue', sans-serif; font-size: 120px; line-height: 0.9; letter-spacing: 0.02em; }
+  .celebrate-label { font-size: 13px; letter-spacing: 0.25em; color: #f4f4f5; text-transform: uppercase; margin-top: 4px; }
+  @keyframes burstPop {
+    0% { transform: scale(0.3); opacity: 0; }
+    60% { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .confetti {
+    position: absolute; top: -40px; font-size: 26px;
+    animation-name: confettiFall; animation-timing-function: ease-in; animation-fill-mode: forwards;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(-40px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(105vh) rotate(540deg); opacity: 0; }
+  }
   </style>
 </head>
 <body>
@@ -394,6 +423,8 @@
     </div>
   </footer>
 </div>
+
+<div id="celebrate" class="celebrate-overlay"></div>
 
 <div id="modal" class="modal-overlay" onclick="closeModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
@@ -593,7 +624,7 @@ let customExos = {};
 let customIngredients = [];
 let recipeOverrides = {};
 let combineSelected = new Set();
-let selectedWorkoutDay = null; // null = today, else 0-6 (day of week)
+let selectedWorkoutDate = null; // null = aujourd'hui, sinon clé date "YYYY-MM-DD"
 
 function loadAll() {
   try { const t = localStorage.getItem(`cutlog:day:${todayKey()}`); if (t) today = { exosChecked: [], ...JSON.parse(t) }; } catch (e) {}
@@ -617,6 +648,30 @@ function saveWeights() { localStorage.setItem('cutlog:weights', JSON.stringify(w
 function saveCustomExos() { localStorage.setItem('cutlog:custom-exos', JSON.stringify(customExos)); }
 function saveCustomIngredients() { localStorage.setItem('cutlog:custom-ingredients', JSON.stringify(customIngredients)); }
 function saveRecipeOverrides() { localStorage.setItem('cutlog:recipe-overrides', JSON.stringify(recipeOverrides)); }
+
+// Lit les données d'un jour quelconque. Pour aujourd'hui, retourne l'objet `today` en mémoire.
+function loadDayData(dateKey) {
+  if (dateKey === todayKey()) return today;
+  try {
+    const t = localStorage.getItem('cutlog:day:' + dateKey);
+    if (t) return JSON.parse(t);
+  } catch (e) {}
+  return { items: [], exosChecked: [] };
+}
+// Écrit les données d'un jour quelconque. Pour aujourd'hui, met aussi à jour `today` + persiste.
+function saveDayData(dateKey, data) {
+  if (dateKey === todayKey()) {
+    today = data;
+    saveToday();
+  } else {
+    localStorage.setItem('cutlog:day:' + dateKey, JSON.stringify(data));
+  }
+}
+// Jour de la semaine (0-6) à partir d'une clé date "YYYY-MM-DD".
+function dowFromKey(dateKey) {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  return new Date(y, m - 1, d).getDay();
+}
 
 function getExos(dow) {
   if (customExos[dow]) return customExos[dow];
@@ -699,65 +754,87 @@ function renderJournal() {
 
   function getStreak() {
     let streak = 0;
-    let d = new Date();
-    let todayKeyStr = todayKey();
-    let isTodayDone = today.workoutDoneObj && today.workoutDoneObj[d.getDay()];
-    
+    const todayKeyStr = todayKey();
     for (let i = 0; i < 365; i++) {
-       let pastD = new Date(Date.now() - i * 86400000);
-       let key = getPastKey(pastD);
-       let isDone = false;
-       
-       if (key === todayKeyStr) {
-          isDone = isTodayDone;
-          if (!isDone && i === 0) continue; 
-       } else {
-          try {
-             let t = localStorage.getItem('cutlog:day:' + key);
-             if (t) {
-                let parsed = JSON.parse(t);
-                if (parsed.workoutDoneObj && parsed.workoutDoneObj[pastD.getDay()]) {
-                   isDone = true;
-                }
-             }
-          } catch(e) {}
-       }
-       
+       const pastD = new Date(Date.now() - i * 86400000);
+       const key = getPastKey(pastD);
+       const data = loadDayData(key);
+       const isDone = !!(data.workoutDoneObj && data.workoutDoneObj[pastD.getDay()]);
+       if (key === todayKeyStr && !isDone) continue; // aujourd'hui pas encore fait ≠ rupture
        if (isDone) streak++;
        else if (i > 0) break;
     }
     return streak;
   }
 
+  // Paliers de série : emoji + couleur selon le nombre de jours consécutifs.
+  const STREAK_TIERS = [
+    { min: 100, emoji: '🌌', color: '#a78bfa', label: 'LÉGENDE' },
+    { min: 50,  emoji: '🏆', color: '#fbbf24', label: 'CHAMPION' },
+    { min: 30,  emoji: '👑', color: '#facc15', label: 'ROI DU CUT' },
+    { min: 21,  emoji: '🚀', color: '#38bdf8', label: 'EN ORBITE' },
+    { min: 14,  emoji: '💎', color: '#22d3ee', label: 'DIAMANT' },
+    { min: 7,   emoji: '⚡', color: '#a3e635', label: 'UNE SEMAINE' },
+    { min: 3,   emoji: '🔥', color: '#fb923c', label: 'ÇA CHAUFFE' },
+    { min: 1,   emoji: '🔥', color: '#FFA500', label: '' },
+    { min: 0,   emoji: '💤', color: '#71717a', label: '' },
+  ];
+  function getStreakTier(streak) {
+    return STREAK_TIERS.find(t => streak >= t.min) || STREAK_TIERS[STREAK_TIERS.length - 1];
+  }
+
+  // Déclenche une célébration si la série franchit un palier vers le haut.
+  function maybeCelebrate(before, after) {
+    if (after <= before) return;
+    const milestones = [3, 7, 14, 21, 30, 50, 100];
+    // Le plus haut palier franchi par ce passage de `before` à `after`
+    const crossed = milestones.filter(m => after >= m && before < m).pop();
+    if (crossed) celebrateStreak(crossed);
+  }
+
+  function celebrateStreak(milestone) {
+    const tier = getStreakTier(milestone);
+    const overlay = document.getElementById('celebrate');
+    if (!overlay) return;
+    overlay.innerHTML = `
+      <div class="celebrate-burst">
+        <div class="celebrate-emoji">${tier.emoji}</div>
+        <div class="celebrate-num" style="color:${tier.color}">${milestone}</div>
+        <div class="celebrate-label">JOURS DE SÉRIE${tier.label ? ' · ' + tier.label : ''}</div>
+      </div>
+      ${Array.from({length: 14}, (_, i) => {
+        const left = Math.random() * 100;
+        const delay = Math.random() * 0.3;
+        const dur = 0.9 + Math.random() * 0.7;
+        const emos = ['🔥','⚡','💪','✨','🎉','💎'];
+        const e = emos[Math.floor(Math.random() * emos.length)];
+        return `<span class="confetti" style="left:${left}%; animation-delay:${delay}s; animation-duration:${dur}s;">${e}</span>`;
+      }).join('')}
+    `;
+    overlay.classList.add('active');
+    clearTimeout(overlay._t);
+    overlay._t = setTimeout(() => overlay.classList.remove('active'), 2200);
+  }
+
   function getHistoryLine() {
      let hist = [];
+     const todayK = todayKey();
      for(let i = 6; i >= 0; i--) {
        let pastD = new Date(Date.now() - i * 86400000);
        let key = getPastKey(pastD);
        let dName = ['D','L','M','M','J','V','S'][pastD.getDay()];
-       let isDone = false;
-       if (key === todayKey()) {
-          isDone = today.workoutDoneObj && today.workoutDoneObj[pastD.getDay()];
-       } else {
-          try {
-             let t = localStorage.getItem('cutlog:day:' + key);
-             if (t) {
-                let parsed = JSON.parse(t);
-                if (parsed.workoutDoneObj && parsed.workoutDoneObj[pastD.getDay()]) {
-                   isDone = true;
-                }
-             }
-          } catch(e) {}
-       }
-       let isSelected = selectedWorkoutDay === pastD.getDay();
-       hist.push(`<div class="hist-day ${isDone ? 'done' : ''} ${isSelected ? 'selected' : ''}" onclick="selectWorkoutDay(${pastD.getDay()})" title="${dName} · Clic pour voir le programme">${dName}</div>`);
+       let data = loadDayData(key);
+       let isDone = !!(data.workoutDoneObj && data.workoutDoneObj[pastD.getDay()]);
+       let isSelected = (selectedWorkoutDate || todayK) === key;
+       hist.push(`<div class="hist-day ${isDone ? 'done' : ''} ${isSelected ? 'selected' : ''}" onclick="selectWorkoutDay('${key}')" title="${dName} · Clic pour voir / marquer ce jour">${dName}</div>`);
      }
      return hist.join('');
   }
 
-  function selectWorkoutDay(dow) {
-    const todayDow = new Date().getDay();
-    selectedWorkoutDay = (dow === todayDow && selectedWorkoutDay === todayDow) ? null : dow;
+  function selectWorkoutDay(dateKey) {
+    const todayK = todayKey();
+    // Re-clic sur le jour déjà affiché → revient à aujourd'hui
+    selectedWorkoutDate = (dateKey === (selectedWorkoutDate || todayK)) ? null : dateKey;
     renderWorkout();
   }
 
@@ -765,19 +842,24 @@ function renderJournal() {
     const container = document.getElementById('workoutsContainer');
     if (!container) return;
 
-    const todayDow = new Date().getDay();
-    const displayDow = selectedWorkoutDay !== null ? selectedWorkoutDay : todayDow;
+    const todayK = todayKey();
+    const displayDate = selectedWorkoutDate || todayK;
+    const isToday = displayDate === todayK;
+    const displayDow = dowFromKey(displayDate);
+    const dayData = loadDayData(displayDate);
     const dayNames = {1:'LUNDI', 2:'MARDI', 3:'MERCREDI', 4:'JEUDI', 5:'VENDREDI', 6:'SAMEDI', 0:'DIMANCHE'};
 
     let streak = getStreak();
     let histHtml = getHistoryLine();
+    const tier = getStreakTier(streak);
 
-    const selectedLabel = selectedWorkoutDay !== null && selectedWorkoutDay !== todayDow ?
-      `<span style="color:#a3e635; font-weight:bold; font-size:11px;">→ PROGRAMME SÉLECTIONNÉ</span>` : '';
+    // Date lisible du jour affiché (ex. "JEU 29/05")
+    const [yy, mm, dd] = displayDate.split('-');
+    const niceDate = `${['DIM','LUN','MAR','MER','JEU','VEN','SAM'][displayDow]} ${dd}/${mm}`;
 
     let html = `<div class="label" style="margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
-       <span>// ENTRAÎNEMENT ${selectedWorkoutDay !== null && selectedWorkoutDay !== todayDow ? `(${dayNames[displayDow]})` : 'DU JOUR'}</span>
-       <span style="color:#FFA500; font-weight:bold;">🔥 Série : ${streak} jour${streak > 1 ? 's' : ''}</span>
+       <span>// ENTRAÎNEMENT ${isToday ? 'DU JOUR' : `(${niceDate})`}</span>
+       <span class="streak-badge" style="color:${tier.color}; font-weight:bold;">${tier.emoji} Série : ${streak} jour${streak > 1 ? 's' : ''}</span>
     </div>
     <div style="display:flex; justify-content:center; gap:8px; margin-bottom: 16px;">
       ${histHtml}
@@ -785,10 +867,10 @@ function renderJournal() {
 
     const def = DEFAULT_EXOS[displayDow];
     const dayName = dayNames[displayDow];
-    const isWorkingOut = today.workoutDoneObj && today.workoutDoneObj[displayDow];
+    const isWorkingOut = dayData.workoutDoneObj && dayData.workoutDoneObj[displayDow];
 
     if (def && (!def.items || def.items.length === 0)) {
-       html += `<div class="workout-header"><div class="workout-info"><div class="display workout-title"><span class="workout-icon">${def.icon}</span><span class="workoutName">${dayName} - ${def.title}</span></div><div class="workout-desc">${def.desc}</div></div></div><div class="workout-footer"><div class="workout-note">${def.note}</div><button class="workout-btn ${isWorkingOut ? 'done' : ''}" onclick="toggleWorkout(${displayDow})">${isWorkingOut ? '✓ REPOS PRIS' : 'MARQUER REPOS'}</button></div>`;
+       html += `<div class="workout-header"><div class="workout-info"><div class="display workout-title"><span class="workout-icon">${def.icon}</span><span class="workoutName">${dayName} - ${def.title}</span></div><div class="workout-desc">${def.desc}</div></div></div><div class="workout-footer"><div class="workout-note">${def.note}</div><button class="workout-btn ${isWorkingOut ? 'done' : ''}" onclick="toggleWorkout('${displayDate}', ${displayDow})">${isWorkingOut ? '✓ REPOS PRIS' : 'MARQUER REPOS'}</button></div>`;
     } else if (def) {
       html += `
         <div class="workout-header">
@@ -803,7 +885,7 @@ function renderJournal() {
         <div class="workout-footer">
           <div class="workout-note">${def.note}</div>
           <button class="reset-btn" onclick="resetExos(${displayDow})" title="Restaurer reps/séries par défaut">↺ défaut</button>
-          <button class="workout-btn ${isWorkingOut ? 'done' : ''}" onclick="toggleWorkout(${displayDow})">${isWorkingOut ? '✓ FAIT' : 'MARQUER'}</button>
+          <button class="workout-btn ${isWorkingOut ? 'done' : ''}" onclick="toggleWorkout('${displayDate}', ${displayDow})">${isWorkingOut ? '✓ FAIT' : 'MARQUER'}</button>
         </div>
       `;
     }
@@ -814,12 +896,10 @@ function renderJournal() {
       const exos = getExos(displayDow);
       const list = document.getElementById(`exoList-${displayDow}`);
       if (!list) return;
+      const checked = dayData.exosChecked || [];
       exos.forEach((ex, idx) => {
         const code = displayDow + "-" + idx;
-        let done = false;
-        if (today.exosChecked && (today.exosChecked.includes(code) || (displayDow === todayDow && today.exosChecked.includes(idx)))) {
-            done = true;
-        }
+        let done = checked.includes(code) || (isToday && checked.includes(idx));
         const row = document.createElement('div');
         row.className = 'exo-row' + (done ? ' done' : '');
         row.innerHTML = `
@@ -833,7 +913,7 @@ function renderJournal() {
         `;
         row.onclick = (e) => {
           if (e.target.tagName === 'INPUT') return;
-          toggleExo(idx, displayDow);
+          toggleExo(idx, displayDow, displayDate);
         };
         list.appendChild(row);
       });
@@ -843,22 +923,28 @@ function renderJournal() {
       });
     }
   }
-  function toggleWorkout(dow) {
-    if (!today.workoutDoneObj) today.workoutDoneObj = {};
-    today.workoutDoneObj[dow] = !today.workoutDoneObj[dow];
-    saveToday();
+  function toggleWorkout(dateKey, dow) {
+    const streakBefore = getStreak();
+    const data = loadDayData(dateKey);
+    if (!data.workoutDoneObj) data.workoutDoneObj = {};
+    data.workoutDoneObj[dow] = !data.workoutDoneObj[dow];
+    saveDayData(dateKey, data);
+    const streakAfter = getStreak();
+    maybeCelebrate(streakBefore, streakAfter);
     renderWorkout();
   }
 
-  function toggleExo(idx, dow) {
+  function toggleExo(idx, dow, dateKey) {
+    const data = loadDayData(dateKey);
     let code = dow + '-' + idx;
-    if (!today.exosChecked) today.exosChecked = [];
-    if (today.exosChecked.includes(code)) {
-      today.exosChecked = today.exosChecked.filter(i => i !== code);
+    if (!data.exosChecked) data.exosChecked = [];
+    if (data.exosChecked.includes(code)) {
+      data.exosChecked = data.exosChecked.filter(i => i !== code);
     } else {
-      today.exosChecked.push(code);
+      data.exosChecked.push(code);
     }
-    saveToday(); renderWorkout();
+    saveDayData(dateKey, data);
+    renderWorkout();
   }
 
   function editExo(idx, field, value, dow) {
